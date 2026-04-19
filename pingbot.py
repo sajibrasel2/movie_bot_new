@@ -15,7 +15,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-TOKEN = "8294665841:AAG-MpBou_a3FgHoi0KFMAzWH5JBPwOaqu4"
+TOKEN = "8294665841:AAGA0fldnAJj0dazXQsa9p67HARnqACwW0E"
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info("START handler called!")

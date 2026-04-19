@@ -7,7 +7,7 @@ Store all sensitive info here and keep this file outside version control.
 # Telegram Bot Configuration
 # =========================
 TELEGRAM_BOT = {
-    "bot_token": "8294665841:AAG-MpBou_a3FgHoi0KFMAzWH5JBPwOaqu4",
+    "bot_token": "8294665841:AAGA0fldnAJj0dazXQsa9p67HARnqACwW0E",
     "bot_username": "@GetLatestMoviesBot",
 }
 
