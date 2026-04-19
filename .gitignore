@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+*.pyo
+posted_urls.txt
+tracked_releases.json
+bot.log
+start_bot.sh
+test_*.py
