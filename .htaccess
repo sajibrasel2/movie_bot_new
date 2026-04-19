@@ -1,2 +1,8 @@
 RewriteEngine On
-RewriteRule ^$ bot.py [L]
+
+# SEO-friendly URLs for movie pages
+RewriteRule ^movies/?$ movies.php [L]
+RewriteRule ^movie/([^/]+)/?$ movie.php?slug=$1 [L]
+
+# API endpoint
+RewriteRule ^api/?$ api.php [L]

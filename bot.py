@@ -33,7 +33,7 @@ from telegram.ext import (
     ContextTypes,
 )
 
-from config import TELEGRAM_BOT, FORCE_SUB_CHANNEL, COMMON, SITES, AUTO_POSTER, RELEASE_TRACKER
+from config import TELEGRAM_BOT, FORCE_SUB_CHANNEL, COMMON, SITES, AUTO_POSTER, RELEASE_TRACKER, WEBSITE
 
 # =========================
 # Logging
@@ -942,16 +942,34 @@ def _fetch_new_posts_sync() -> list:
             logger.error("AutoPost %s error: %s", site["name"], exc)
     return new_posts, posted_urls
 
-async def _post_to_channel(context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Job callback: check for new uploads and post to channel."""
-    if not AUTO_POSTER["enabled"]:
+def _post_to_website(item: dict, source_name: str = "", source_emoji: str = "🎬") -> None:
+    """Send movie data to website API (sync, called from thread)."""
+    if not WEBSITE.get("enabled"):
         return
+    try:
+        payload = {
+            "title": item.get("title", ""),
+            "link": item.get("link", ""),
+            "thumbnail": item.get("thumbnail", ""),
+            "download_links": item.get("download_links", []),
+            "source_name": source_name,
+            "source_emoji": source_emoji,
+            "secret": WEBSITE["secret"],
+        }
+        resp = requests.post(
+            WEBSITE["api_url"],
+            json=payload,
+            timeout=10,
+            headers={"Content-Type": "application/json"},
+        )
+        if resp.status_code == 200:
+            data = resp.json()
+            logger.info("Website: posted '%s' -> slug=%s", item.get("title", "")[:30], data.get("slug", ""))
+        else:
+            logger.warning("Website: API returned %d for '%s'", resp.status_code, item.get("title", "")[:30])
+    except Exception as exc:
+        logger.error("Website: post failed for '%s': %s", item.get("title", "")[:30], exc)
 
-    logger.info("AutoPost: checking for new uploads...")
-
-    loop = asyncio.get_event_loop()
-    new_posts, posted_urls = await loop.run_in_executor(None, _fetch_new_posts_sync)
-    return new_posts, posted_urls
 
 async def _post_to_channel(context: ContextTypes.DEFAULT_TYPE) -> None:
     """Job callback: check for new uploads and post to channel."""
@@ -1024,6 +1042,8 @@ async def _post_to_channel(context: ContextTypes.DEFAULT_TYPE) -> None:
                 )
             _save_posted_url(link)
             logger.info("AutoPost: posted '%s'", title[:40])
+            # Post to website
+            await loop.run_in_executor(None, _post_to_website, item, item.get("source_name", ""), item.get("source_emoji", "🎬"))
         except Exception as exc:
             logger.error("AutoPost: failed to post '%s': %s", title[:30], exc)
 
@@ -1358,6 +1378,8 @@ async def _check_releases_and_post(context: ContextTypes.DEFAULT_TYPE) -> None:
                     _save_posted_url(link)
                     downloads_posted += 1
                     logger.info("ReleaseTracker: DOWNLOADS posted '%s'", title[:30])
+                    # Post to website
+                    await asyncio.get_event_loop().run_in_executor(None, _post_to_website, best, "Release", "🆕")
                 except Exception as exc:
                     logger.error("ReleaseTracker: download post failed '%s': %s", title[:30], exc)
             else:

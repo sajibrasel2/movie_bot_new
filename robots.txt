@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://techandclick.site/sitemap.xml
+Sitemap: https://techandclick.site/sitemap-movies.xml
+Sitemap: https://techandclick.site/telegrammini/sitemap.xml

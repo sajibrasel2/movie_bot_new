@@ -53,6 +53,15 @@ RELEASE_TRACKER = {
 }
 
 # =========================
+# Website Posting Settings
+# =========================
+WEBSITE = {
+    "enabled": True,
+    "api_url": "https://techandclick.site/api",
+    "secret": "tc_movie_2026_secret",
+}
+
+# =========================
 # Source 1: ctgmovies.com (Bangla/Hindi/South Indian)
 # =========================
 CTGMOVIES = {
