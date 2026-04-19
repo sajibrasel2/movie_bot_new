@@ -2,9 +2,10 @@
 deployment:
   tasks:
     - export DEPLOYPATH=/home/techandc/repositories/movie_bot_new
-    - /bin/cp -r * $DEPLOYPATH/
+    - /bin/rsync -av --delete ./ $DEPLOYPATH/ --exclude .git --exclude __pycache__ --exclude bot.log --exclude bot.pid --exclude posted_urls.txt --exclude tracked_releases.json
     - cd $DEPLOYPATH
     - source /home/techandc/virtualenv/movie_bot_new/3.11/bin/activate
-    - pip install -r requirements.txt
-    - pkill -f bot.py || true
+    - pip install -q -r requirements.txt
+    - pkill -9 -f bot.py || true
+    - sleep 2
     - nohup python bot.py > bot.log 2>&1 &

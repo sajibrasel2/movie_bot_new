@@ -4,5 +4,6 @@ __pycache__/
 posted_urls.txt
 tracked_releases.json
 bot.log
+bot.pid
 start_bot.sh
 test_*.py

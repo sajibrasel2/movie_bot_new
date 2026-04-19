@@ -697,12 +697,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         return
     user_id = update.effective_user.id
     query = update.message.text.strip()
-    logger.info("handle_message called: user=%s query='%s'", user_id, query[:30])
+    logger.info("handle_message: user=%s query='%s'", user_id, query[:30])
 
     try:
         is_subscribed = await is_member(user_id, context)
     except Exception as e:
         logger.error("handle_message: is_member check failed: %s", e)
+        is_subscribed = False
 
     if not is_subscribed:
         channel_link = f"https://t.me/{FORCE_SUB_CHANNEL.lstrip('@')}"
@@ -813,7 +814,119 @@ def _save_posted_url(url: str) -> None:
         logger.error("Failed to save posted URL: %s", exc)
 
 
-def _fetch_new_posts_sync() -> tuple:
+def _fetch_latest_from_site(site: dict) -> List[Dict]:
+    """Fetch latest posts from a site (first page, no search query)."""
+    headers = {"User-Agent": COMMON["user_agent"]}
+    verify = site.get("verify_ssl", True)
+    whitelist = site.get("whitelist_domains", ())
+    results = []
+
+    if site["type"] == "api":
+        try:
+            resp = requests.get(
+                site["api_url"],
+                params={"per_page": 5, "orderby": "date", "order": "desc"},
+                headers=headers, timeout=COMMON["timeout"], verify=False,
+            )
+            resp.raise_for_status()
+            posts = resp.json()
+            for post in posts[:5]:
+                title_html = post.get("title", {}).get("rendered", "")
+                title = BeautifulSoup(title_html, "lxml").get_text(strip=True)
+                link = post.get("link", "")
+                if not title or not link:
+                    continue
+                thumbnail = _get_thumbnail_from_page(link, headers, site["base_url"], verify=False)
+                download_links = _extract_download_links_from_page(
+                    link, headers, verify=False, whitelist_domains=whitelist
+                )
+                results.append({"title": title, "link": link, "thumbnail": thumbnail, "download_links": download_links})
+        except Exception as exc:
+            logger.error("AutoPost %s API error: %s", site["name"], exc)
+        return results
+
+    # For wp/custom: fetch homepage and get latest articles
+    base_url = site.get("base_url", "")
+    alias_urls = site.get("aliases", [])
+    all_urls = [base_url] + alias_urls
+
+    for url in all_urls:
+        try:
+            if site["type"] == "custom":
+                # Elaach: use /movies page for latest
+                resp = requests.get(url, headers=headers, timeout=COMMON["timeout"], verify=False)
+            else:
+                resp = requests.get(url, headers=headers, timeout=COMMON["timeout"], verify=verify)
+            resp.raise_for_status()
+            if len(resp.text) < 500:
+                continue
+            soup = BeautifulSoup(resp.text, "lxml")
+            working_base = url
+
+            if site["type"] == "custom":
+                # Elaach: h3 links
+                for h3 in soup.select("h3")[:5]:
+                    a = h3.select_one("a")
+                    if not a:
+                        continue
+                    title = a.get_text(strip=True)
+                    href = a.get("href", "")
+                    if not title or not href or title.lower() in ("moviedetails", "filter movies", "filter tv series"):
+                        continue
+                    if href.startswith("/"):
+                        href = working_base + href
+                    img = h3.select_one("img") or (h3.parent.select_one("img") if h3.parent else None)
+                    thumbnail = ""
+                    if img:
+                        thumbnail = img.get("src", "") or img.get("data-src", "") or img.get("data-lazy-src", "")
+                        if thumbnail and not thumbnail.startswith(("http://", "https://")):
+                            thumbnail = working_base + "/" + thumbnail.lstrip("/")
+                    download_links = _extract_download_links_from_page(
+                        href, headers, verify=False, skip_local_172=True
+                    )
+                    results.append({"title": title, "link": href, "thumbnail": thumbnail, "download_links": download_links})
+            else:
+                # WordPress: articles
+                articles = soup.select("article")[:5]
+                for article in articles:
+                    title_tag = (
+                        article.select_one("h2.entry-title a") or article.select_one("h3.entry-title a")
+                        or article.select_one("h2 a") or article.select_one("h3 a")
+                        or article.select_one(".entry-title a")
+                    )
+                    if not title_tag:
+                        continue
+                    title = title_tag.get_text(strip=True)
+                    link = title_tag.get("href", "")
+                    if not title or not link:
+                        continue
+                    img_tag = article.select_one("img")
+                    thumbnail = ""
+                    if img_tag:
+                        thumbnail = img_tag.get("src", "") or img_tag.get("data-src", "") or img_tag.get("data-lazy-src", "")
+                        if thumbnail and not thumbnail.startswith(("http://", "https://")):
+                            thumbnail = working_base.rstrip("/") + "/" + thumbnail.lstrip("/")
+                    # Scrape detail page
+                    try:
+                        better_thumb = _get_thumbnail_from_page(link, headers, working_base, verify)
+                        if better_thumb:
+                            thumbnail = better_thumb
+                        download_links = _extract_download_links_from_page(
+                            link, headers, verify=verify, whitelist_domains=whitelist
+                        )
+                    except Exception:
+                        download_links = []
+                    results.append({"title": title, "link": link, "thumbnail": thumbnail, "download_links": download_links})
+
+            if results:
+                break  # Found results from this URL, no need to try aliases
+        except Exception:
+            continue
+
+    return results
+
+
+def _fetch_new_posts_sync() -> list:
     """Sync helper: fetch latest from all sites (runs in thread)."""
     posted_urls = _load_posted_urls()
     new_posts = []
@@ -827,6 +940,17 @@ def _fetch_new_posts_sync() -> tuple:
                     posted_urls.add(link)
         except Exception as exc:
             logger.error("AutoPost %s error: %s", site["name"], exc)
+    return new_posts, posted_urls
+
+async def _post_to_channel(context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Job callback: check for new uploads and post to channel."""
+    if not AUTO_POSTER["enabled"]:
+        return
+
+    logger.info("AutoPost: checking for new uploads...")
+
+    loop = asyncio.get_event_loop()
+    new_posts, posted_urls = await loop.run_in_executor(None, _fetch_new_posts_sync)
     return new_posts, posted_urls
 
 async def _post_to_channel(context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -1253,15 +1377,39 @@ async def _check_releases_and_post(context: ContextTypes.DEFAULT_TYPE) -> None:
 # =========================
 # Main
 # =========================
-async def _debug_update(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Log every incoming update for debugging."""
-    logger.info("DEBUG UPDATE: id=%s type=%s", update.update_id, type(update.effective_message).__name__ if update.effective_message else "none")
+_PID_FILE = os.path.join(os.path.dirname(__file__), "bot.pid")
+
+
+def _kill_existing_bot() -> None:
+    """Kill any existing bot process to prevent duplicates."""
+    if not os.path.exists(_PID_FILE):
+        return
+    try:
+        with open(_PID_FILE, "r") as f:
+            old_pid = int(f.read().strip())
+        os.kill(old_pid, 9)
+        logger.info("Killed old bot process PID=%d", old_pid)
+    except (ValueError, ProcessLookupError, PermissionError):
+        pass
+    try:
+        os.remove(_PID_FILE)
+    except OSError:
+        pass
+
 
 async def _error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Log all errors."""
-    logger.error("ERROR HANDLER: update=%s error=%s", update, context.error)
+    logger.error("ERROR HANDLER: update=%s error=%s", update, context.error, exc_info=context.error)
+
 
 def main() -> None:
+    # Kill any existing bot process first
+    _kill_existing_bot()
+
+    # Write PID file
+    with open(_PID_FILE, "w") as f:
+        f.write(str(os.getpid()))
+
     application = (
         ApplicationBuilder()
         .token(TELEGRAM_BOT["bot_token"])
@@ -1271,8 +1419,6 @@ def main() -> None:
     application.add_handler(
         MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message)
     )
-    # Debug: log all updates
-    application.add_handler(TypeHandler(Update, _debug_update), group=-1)
     application.add_error_handler(_error_handler)
 
     # Auto-poster scheduler
