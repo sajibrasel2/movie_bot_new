@@ -4,6 +4,7 @@ Reads all sources from config.SITES and searches them in parallel.
 Uses python-telegram-bot v20+ (async).
 """
 
+import asyncio
 import logging
 import re
 import urllib.parse
@@ -625,7 +626,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         parse_mode="HTML",
     )
 
-    all_results = search_all_sites(query)
+    loop = asyncio.get_event_loop()
+    all_results = await loop.run_in_executor(None, search_all_sites, query)
 
     # Edit search message to show completion
     try:
@@ -700,7 +702,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 # =========================
 import json
 import os
-import asyncio
 from datetime import datetime
 
 _POSTED_FILE = os.path.join(os.path.dirname(__file__), AUTO_POSTER["posted_file"])
