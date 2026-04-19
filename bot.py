@@ -8,6 +8,9 @@ import asyncio
 import logging
 import re
 import urllib.parse
+import json
+import os
+from datetime import datetime, timedelta
 from typing import List, Dict, Optional
 from concurrent.futures import ThreadPoolExecutor
 
@@ -25,6 +28,7 @@ from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
     MessageHandler,
+    TypeHandler,
     filters,
     ContextTypes,
 )
@@ -163,6 +167,95 @@ def _build_alias_urls(site: dict, url_template: str, query_encoded: str) -> list
 # =========================
 # Generic Site Searchers
 # =========================
+
+def _fetch_latest_from_site(site: dict) -> List[Dict]:
+    """Fetch latest posts from a site (first page, no search query)."""
+    headers = {"User-Agent": COMMON["user_agent"]}
+    verify = site.get("verify_ssl", True)
+    whitelist = site.get("whitelist_domains", ())
+    results = []
+
+    if site["type"] == "api":
+        try:
+            resp = requests.get(
+                site["api_url"],
+                params={"per_page": 5, "orderby": "date", "order": "desc"},
+                headers=headers, timeout=COMMON["timeout"], verify=False,
+            )
+            resp.raise_for_status()
+            posts = resp.json()
+            for post in posts[:5]:
+                title_html = post.get("title", {}).get("rendered", "")
+                title = BeautifulSoup(title_html, "lxml").get_text(strip=True)
+                link = post.get("link", "")
+                if not title or not link:
+                    continue
+                thumbnail = _get_thumbnail_from_page(link, headers, site["base_url"], verify=False)
+                download_links = _extract_download_links_from_page(
+                    link, headers, verify=False, whitelist_domains=whitelist
+                )
+                results.append({"title": title, "link": link, "thumbnail": thumbnail, "download_links": download_links})
+        except Exception as exc:
+            logger.error("AutoPost %s API error: %s", site["name"], exc)
+        return results
+
+    # For wp/custom: fetch homepage and get latest articles
+    base_url = site.get("base_url", "")
+    alias_urls = site.get("aliases", [])
+    
+    headers = {"User-Agent": COMMON["user_agent"]}
+    resp = _try_url_with_fallback(base_url, alias_urls, headers, timeout=COMMON["timeout"], verify=verify)
+    if not resp:
+        return []
+
+    working_base = base_url
+    for alias in alias_urls:
+        if alias in resp.url:
+            working_base = alias
+            break
+
+    soup = BeautifulSoup(resp.text, "lxml")
+    
+    # Generic latest posts extraction logic
+    articles = soup.select("article") or soup.select("div.post-item") or soup.select("div.post")
+    for article in articles[:5]:
+        title_tag = (
+            article.select_one("h2.entry-title a") or article.select_one("h3.entry-title a")
+            or article.select_one("h2 a") or article.select_one("h3 a")
+            or article.select_one(".entry-title a")
+        )
+        if not title_tag:
+            continue
+        title = title_tag.get_text(strip=True)
+        link = title_tag.get("href", "")
+        if not title or not link:
+            continue
+        
+        # Link resolution for aliases
+        if link.startswith("/"):
+            link = working_base.rstrip("/") + link
+            
+        img_tag = article.select_one("img")
+        thumbnail = ""
+        if img_tag:
+            thumbnail = img_tag.get("src", "") or img_tag.get("data-src", "") or img_tag.get("data-lazy-src", "")
+            if thumbnail and not thumbnail.startswith(("http://", "https://")):
+                thumbnail = working_base.rstrip("/") + "/" + thumbnail.lstrip("/")
+        
+        # Scrape detail page for better thumbnail + download links
+        try:
+            better_thumb = _get_thumbnail_from_page(link, headers, working_base, verify)
+            if better_thumb:
+                thumbnail = better_thumb
+            download_links = _extract_download_links_from_page(
+                link, headers, verify=verify, whitelist_domains=whitelist
+            )
+        except Exception:
+            download_links = []
+            
+        results.append({"title": title, "link": link, "thumbnail": thumbnail, "download_links": download_links})
+
+    return results
 
 def _search_wp(site: dict, query: str) -> List[Dict]:
     """Search a WordPress site using ?s= query parameter."""
@@ -604,8 +697,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         return
     user_id = update.effective_user.id
     query = update.message.text.strip()
+    logger.info("handle_message called: user=%s query='%s'", user_id, query[:30])
 
-    if not await is_member(user_id, context):
+    try:
+        is_subscribed = await is_member(user_id, context)
+    except Exception as e:
+        logger.error("handle_message: is_member check failed: %s", e)
+
+    if not is_subscribed:
         channel_link = f"https://t.me/{FORCE_SUB_CHANNEL.lstrip('@')}"
         keyboard = InlineKeyboardMarkup(
             [[InlineKeyboardButton("🔔 Join Channel to Unlock", url=channel_link)]]
@@ -629,81 +728,68 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     loop = asyncio.get_event_loop()
     all_results = await loop.run_in_executor(None, search_all_sites, query)
 
-    # Edit search message to show completion
-    try:
-        await search_msg.edit_text(
-            f"🔍 Searching for: <b>{html_escape(query)}</b> ✅",
-            parse_mode="HTML",
-        )
-    except Exception:
-        pass
-
     if not all_results:
-        await update.message.reply_text(
-            "😕 No results found.\n"
-            "Try a different name or check spelling.",
+        await search_msg.edit_text(
+            f"❌ No results found for: <b>{html_escape(query)}</b>\n"
+            "Try a different movie name.",
+            parse_mode="HTML"
         )
         return
 
-    for movie in all_results:
-        title = movie["title"]
-        link = movie["link"]
-        thumbnail = movie["thumbnail"]
-        dl_links = movie.get("download_links", [])
+    # De-duplicate results by title (case-insensitive)
+    unique_results = []
+    seen = set()
+    for res in all_results:
+        t_low = res["title"].lower()
+        if t_low not in seen:
+            unique_results.append(res)
+            seen.add(t_low)
 
-        caption = f"🎬 <b>{html_escape(title)}</b>"
+    # Show top 10 results
+    unique_results = unique_results[:10]
 
-        source_name = movie.get("source", "")
-        if source_name:
-            caption += f"\n📡 <i>{html_escape(source_name)}</i>"
-
-        if dl_links:
-            caption += "\n\n📥 <b>Download Links:</b>"
-            for dl in dl_links[:8]:
-                dl_text = dl["text"].replace("[", "(").replace("]", ")")
-                if len(dl_text) > 50:
-                    dl_text = dl_text[:47] + "..."
-                url = dl["url"]
-                if url.startswith(("http://", "https://")):
-                    caption += f'\n• <a href="{url}">{html_escape(dl_text)}</a>'
-                else:
-                    caption += f"\n• {html_escape(dl_text)}"
-                    caption += f"\n  <code>{html_escape(url)}</code>"
-            if len(dl_links) > 8:
-                caption += f'\n<i>...and {len(dl_links) - 8} more on the movie page</i>'
-
-        # Build buttons
-        buttons = []
-        for dl in dl_links[:3]:
-            url = dl["url"]
-            if url.startswith(("http://", "https://")):
-                dl_text = dl["text"].replace("[", "(").replace("]", ")")
-                if len(dl_text) > 25:
-                    dl_text = dl_text[:22] + "..."
-                buttons.append([InlineKeyboardButton(f"📥 {dl_text}", url=url)])
-        buttons.append([InlineKeyboardButton("🔗 Open Movie Page", url=link)])
-        keyboard = InlineKeyboardMarkup(buttons)
-
-        use_photo = thumbnail and len(caption) <= 1000
-        if use_photo:
-            try:
-                await update.message.reply_photo(
-                    photo=thumbnail, caption=caption,
-                    parse_mode="HTML", reply_markup=keyboard,
+    response_text = f"✅ <b>Found {len(unique_results)} results for: {html_escape(query)}</b>\n\n"
+    
+    # Send results with inline buttons for better UX
+    for i, res in enumerate(unique_results, 1):
+        title = res["title"]
+        link = res["link"]
+        
+        # Determine if it's a direct download or a page link
+        btn_text = "📥 Download Now" if "download" in link.lower() else "🔗 View Movie"
+        
+        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton(btn_text, url=link)]])
+        
+        try:
+            if res.get("thumbnail"):
+                await context.bot.send_photo(
+                    chat_id=update.effective_chat.id,
+                    photo=res["thumbnail"],
+                    caption=f"🎬 <b>{html_escape(title)}</b>",
+                    parse_mode="HTML",
+                    reply_markup=keyboard
                 )
-                continue
-            except Exception:
-                pass
-        await update.message.reply_text(caption, parse_mode="HTML", reply_markup=keyboard)
+            else:
+                await context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=f"🎬 <b>{html_escape(title)}</b>",
+                    parse_mode="HTML",
+                    reply_markup=keyboard
+                )
+        except Exception as e:
+            logger.error("Error sending search result %d: %s", i, e)
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f"🎬 <a href=\"{link}\">{html_escape(title)}</a>",
+                parse_mode="HTML"
+            )
+
+    await search_msg.delete()
 
 
 # =========================
 # Auto-Poster — posts new uploads to channel
 # =========================
-import json
-import os
-from datetime import datetime
-
 _POSTED_FILE = os.path.join(os.path.dirname(__file__), AUTO_POSTER["posted_file"])
 
 
@@ -727,128 +813,10 @@ def _save_posted_url(url: str) -> None:
         logger.error("Failed to save posted URL: %s", exc)
 
 
-def _fetch_latest_from_site(site: dict) -> List[Dict]:
-    """Fetch latest posts from a site (first page, no search query)."""
-    headers = {"User-Agent": COMMON["user_agent"]}
-    verify = site.get("verify_ssl", True)
-    whitelist = site.get("whitelist_domains", ())
-    results = []
-
-    if site["type"] == "api":
-        try:
-            resp = requests.get(
-                site["api_url"],
-                params={"per_page": 5, "orderby": "date", "order": "desc"},
-                headers=headers, timeout=COMMON["timeout"], verify=False,
-            )
-            resp.raise_for_status()
-            posts = resp.json()
-            for post in posts[:5]:
-                title_html = post.get("title", {}).get("rendered", "")
-                title = BeautifulSoup(title_html, "lxml").get_text(strip=True)
-                link = post.get("link", "")
-                if not title or not link:
-                    continue
-                thumbnail = _get_thumbnail_from_page(link, headers, site["base_url"], verify=False)
-                download_links = _extract_download_links_from_page(
-                    link, headers, verify=False, whitelist_domains=whitelist
-                )
-                results.append({"title": title, "link": link, "thumbnail": thumbnail, "download_links": download_links})
-        except Exception as exc:
-            logger.error("AutoPost %s API error: %s", site["name"], exc)
-        return results
-
-    # For wp/custom: fetch homepage and get latest articles
-    base_url = site.get("base_url", "")
-    alias_urls = site.get("aliases", [])
-    all_urls = [base_url] + alias_urls
-
-    for url in all_urls:
-        try:
-            if site["type"] == "custom":
-                # Elaach: use /movies page for latest
-                resp = requests.get(url, headers=headers, timeout=COMMON["timeout"], verify=False)
-            else:
-                resp = requests.get(url, headers=headers, timeout=COMMON["timeout"], verify=verify)
-            resp.raise_for_status()
-            if len(resp.text) < 500:
-                continue
-            soup = BeautifulSoup(resp.text, "lxml")
-            working_base = url
-
-            if site["type"] == "custom":
-                # Elaach: h3 links
-                for h3 in soup.select("h3")[:5]:
-                    a = h3.select_one("a")
-                    if not a:
-                        continue
-                    title = a.get_text(strip=True)
-                    href = a.get("href", "")
-                    if not title or not href or title.lower() in ("moviedetails", "filter movies", "filter tv series"):
-                        continue
-                    if href.startswith("/"):
-                        href = working_base + href
-                    img = h3.select_one("img") or (h3.parent.select_one("img") if h3.parent else None)
-                    thumbnail = ""
-                    if img:
-                        thumbnail = img.get("src", "") or img.get("data-src", "") or img.get("data-lazy-src", "")
-                        if thumbnail and not thumbnail.startswith(("http://", "https://")):
-                            thumbnail = working_base + "/" + thumbnail.lstrip("/")
-                    download_links = _extract_download_links_from_page(
-                        href, headers, verify=False, skip_local_172=True
-                    )
-                    results.append({"title": title, "link": href, "thumbnail": thumbnail, "download_links": download_links})
-            else:
-                # WordPress: articles
-                articles = soup.select("article")[:5]
-                for article in articles:
-                    title_tag = (
-                        article.select_one("h2.entry-title a") or article.select_one("h3.entry-title a")
-                        or article.select_one("h2 a") or article.select_one("h3 a")
-                        or article.select_one(".entry-title a")
-                    )
-                    if not title_tag:
-                        continue
-                    title = title_tag.get_text(strip=True)
-                    link = title_tag.get("href", "")
-                    if not title or not link:
-                        continue
-                    img_tag = article.select_one("img")
-                    thumbnail = ""
-                    if img_tag:
-                        thumbnail = img_tag.get("src", "") or img_tag.get("data-src", "") or img_tag.get("data-lazy-src", "")
-                        if thumbnail and not thumbnail.startswith(("http://", "https://")):
-                            thumbnail = working_base.rstrip("/") + "/" + thumbnail.lstrip("/")
-                    # Scrape detail page
-                    try:
-                        better_thumb = _get_thumbnail_from_page(link, headers, working_base, verify)
-                        if better_thumb:
-                            thumbnail = better_thumb
-                        download_links = _extract_download_links_from_page(
-                            link, headers, verify=verify, whitelist_domains=whitelist
-                        )
-                    except Exception:
-                        download_links = []
-                    results.append({"title": title, "link": link, "thumbnail": thumbnail, "download_links": download_links})
-
-            if results:
-                break  # Found results from this URL, no need to try aliases
-        except Exception:
-            continue
-
-    return results
-
-
-async def _post_to_channel(context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Job callback: check for new uploads and post to channel."""
-    if not AUTO_POSTER["enabled"]:
-        return
-
+def _fetch_new_posts_sync() -> tuple:
+    """Sync helper: fetch latest from all sites (runs in thread)."""
     posted_urls = _load_posted_urls()
     new_posts = []
-
-    logger.info("AutoPost: checking for new uploads...")
-
     for site in SITES:
         try:
             latest = _fetch_latest_from_site(site)
@@ -859,6 +827,17 @@ async def _post_to_channel(context: ContextTypes.DEFAULT_TYPE) -> None:
                     posted_urls.add(link)
         except Exception as exc:
             logger.error("AutoPost %s error: %s", site["name"], exc)
+    return new_posts, posted_urls
+
+async def _post_to_channel(context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Job callback: check for new uploads and post to channel."""
+    if not AUTO_POSTER["enabled"]:
+        return
+
+    logger.info("AutoPost: checking for new uploads...")
+
+    loop = asyncio.get_event_loop()
+    new_posts, posted_urls = await loop.run_in_executor(None, _fetch_new_posts_sync)
 
     if not new_posts:
         logger.info("AutoPost: no new uploads found")
@@ -1104,8 +1083,9 @@ async def _check_releases_and_post(context: ContextTypes.DEFAULT_TYPE) -> None:
 
     logger.info("ReleaseTracker: checking upcoming releases...")
 
-    # 1. Fetch upcoming releases from Wikipedia
-    upcoming = _fetch_upcoming_releases()
+    # 1. Fetch upcoming releases from Wikipedia (in thread to avoid blocking)
+    loop = asyncio.get_event_loop()
+    upcoming = await loop.run_in_executor(None, _fetch_upcoming_releases)
 
     # 2. Load existing tracked releases
     tracked = _load_tracked_releases()
@@ -1179,21 +1159,25 @@ async def _check_releases_and_post(context: ContextTypes.DEFAULT_TYPE) -> None:
                        release["title"][:30], hours_since_release)
             release["searched"] = True
 
-            # Use direct search (no fuzzy) for speed in release tracker
-            results = []
-            for site in SITES:
-                site_type = site.get("type", "wp")
-                try:
-                    if site_type == "wp":
-                        results.extend(_search_wp(site, release["title"]))
-                    elif site_type == "api":
-                        results.extend(_search_api(site, release["title"]))
-                    elif site_type == "custom":
-                        results.extend(_search_custom_elaach(site, release["title"]))
-                except Exception:
-                    continue
-                if results:
-                    break  # Found results, no need to search more sites
+            # Use direct search (no fuzzy) for speed in release tracker (in thread)
+            def _search_release(title):
+                res = []
+                for site in SITES:
+                    site_type = site.get("type", "wp")
+                    try:
+                        if site_type == "wp":
+                            res.extend(_search_wp(site, title))
+                        elif site_type == "api":
+                            res.extend(_search_api(site, title))
+                        elif site_type == "custom":
+                            res.extend(_search_custom_elaach(site, title))
+                    except Exception:
+                        continue
+                    if res:
+                        break
+                return res
+
+            results = await asyncio.get_event_loop().run_in_executor(None, _search_release, release["title"])
 
             if results:
                 best = results[0]
@@ -1269,6 +1253,14 @@ async def _check_releases_and_post(context: ContextTypes.DEFAULT_TYPE) -> None:
 # =========================
 # Main
 # =========================
+async def _debug_update(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Log every incoming update for debugging."""
+    logger.info("DEBUG UPDATE: id=%s type=%s", update.update_id, type(update.effective_message).__name__ if update.effective_message else "none")
+
+async def _error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Log all errors."""
+    logger.error("ERROR HANDLER: update=%s error=%s", update, context.error)
+
 def main() -> None:
     application = (
         ApplicationBuilder()
@@ -1279,6 +1271,9 @@ def main() -> None:
     application.add_handler(
         MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message)
     )
+    # Debug: log all updates
+    application.add_handler(TypeHandler(Update, _debug_update), group=-1)
+    application.add_error_handler(_error_handler)
 
     # Auto-poster scheduler
     if AUTO_POSTER["enabled"]:
