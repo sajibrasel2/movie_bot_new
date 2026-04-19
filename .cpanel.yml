@@ -1,0 +1,10 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/techandc/repositories/movie_bot_new
+    - /bin/cp -r * $DEPLOYPATH/
+    - cd $DEPLOYPATH
+    - source /home/techandc/virtualenv/movie_bot_new/3.11/bin/activate
+    - pip install -r requirements.txt
+    - pkill -f bot.py || true
+    - nohup python bot.py > bot.log 2>&1 &
