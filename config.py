@@ -57,7 +57,7 @@ RELEASE_TRACKER = {
 # =========================
 WEBSITE = {
     "enabled": True,
-    "api_url": "https://techandclick.site/api",
+    "api_url": "https://techandclick.site/api.php",
     "secret": "tc_movie_2026_secret",
 }
 
