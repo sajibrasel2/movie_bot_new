@@ -9,8 +9,8 @@ $site='https://techandclick.site'; $bot='https://t.me/GetLatestMoviesBot'; $ch='
 <meta name="description" content="Download latest Bollywood, Hollywood, South Indian movies & series via Telegram bot. One click to channel.">
 <meta name="keywords" content="movie download telegram, latest movie download, bollywood movie telegram, free movie download bot">
 <meta name="robots" content="index,follow,max-image-preview:large">
-<link rel="canonical" href="<?=$site?>/movies">
-<meta property="og:title" content="Latest Movies Download — Telegram Bot"><meta property="og:url" content="<?=$site?>/movies">
+<link rel="canonical" href="<?=$site?>/movies.php">
+<meta property="og:title" content="Latest Movies Download — Telegram Bot"><meta property="og:url" content="<?=$site?>/movies.php">
 <link rel="stylesheet" href="movie-style.css">
 </head><body>
 <div class="wrap">
@@ -25,7 +25,7 @@ $site='https://techandclick.site'; $bot='https://t.me/GetLatestMoviesBot'; $ch='
 <?php else: foreach($movies as $m):
   $slug=$m['slug']??''; $title=htmlspecialchars($m['title']??''); $thumb=$m['thumbnail']??'';
   $src=htmlspecialchars(($m['source_emoji']??'🎬').' '.($m['source_name']??''));
-  $dls=$m['download_links']??[]; $url="$site/movie/$slug";
+  $dls=$m['download_links']??[]; $url="$site/movie.php?slug=$slug";
 ?>
 <article class="card">
 <?php if($thumb):?><a href="<?=$url?>"><img src="<?=htmlspecialchars($thumb)?>" alt="<?=htmlspecialchars($title)?>" loading="lazy"></a><?php endif;?>

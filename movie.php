@@ -20,7 +20,7 @@ $desc = "Download $title via Telegram bot. Get direct download links for $title 
 $dls = $movie['download_links'] ?? [];
 $src_name = htmlspecialchars($movie['source_name'] ?? '');
 $src_emoji = $movie['source_emoji'] ?? '🎬';
-$movie_url = "$site/movie/$slug";
+$movie_url = "$site/movie.php?slug=$slug";
 ?>
 <!doctype html>
 <html lang="en"><head>
@@ -29,7 +29,7 @@ $movie_url = "$site/movie/$slug";
 <meta name="description" content="<?=htmlspecialchars($desc)?>">
 <meta name="keywords" content="<?=htmlspecialchars($title)?> download, <?=htmlspecialchars($title)?> telegram, <?=htmlspecialchars($title)?> movie download">
 <meta name="robots" content="index,follow,max-image-preview:large">
-<link rel="canonical" href="<?=$movie_url?>">
+<link rel="canonical" href="<?=$site?>/movie.php?slug=<?=$slug?>">
 <meta property="og:type" content="article">
 <meta property="og:title" content="<?=$title?> — Download on Telegram">
 <meta property="og:description" content="<?=htmlspecialchars($desc)?>">
@@ -51,10 +51,10 @@ $movie_url = "$site/movie/$slug";
 </head><body>
 <div class="wrap">
 <header><a class="logo" href="/"><span>Tech & Click</span> Movies</a>
-<nav class="nav-links"><a href="/">Home</a><a href="/movies">All Movies</a><a href="<?=$bot?>" target="_blank">Open Bot</a></nav></header>
+<nav class="nav-links"><a href="/">Home</a><a href="/movies.php">All Movies</a><a href="<?=$bot?>" target="_blank">Open Bot</a></nav></header>
 
 <div class="breadcrumb">
-<a href="/">Home</a> › <a href="/movies">Movies</a> › <?=$title?>
+<a href="/">Home</a> › <a href="/movies.php">Movies</a> › <?=$title?>
 </div>
 
 <section class="detail">

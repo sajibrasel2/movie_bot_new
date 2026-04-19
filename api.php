@@ -102,13 +102,13 @@ function generate_movie_sitemap($movies) {
     $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
 
     // Movies listing page
-    $xml .= "  <url>\n    <loc>$base/movies</loc>\n    <changefreq>daily</changefreq>\n    <priority>0.9</priority>\n  </url>\n";
+    $xml .= "  <url>\n    <loc>$base/movies.php</loc>\n    <changefreq>daily</changefreq>\n    <priority>0.9</priority>\n  </url>\n";
 
     foreach ($movies as $m) {
         $slug = htmlspecialchars($m['slug'] ?? '', ENT_XML1);
         if (!$slug) continue;
         $lastmod = substr($m['posted_at'] ?? date('c'), 0, 10);
-        $xml .= "  <url>\n    <loc>$base/movie/$slug</loc>\n    <lastmod>$lastmod</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n";
+        $xml .= "  <url>\n    <loc>$base/movie.php?slug=$slug</loc>\n    <lastmod>$lastmod</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n";
     }
 
     $xml .= "</urlset>\n";

@@ -276,7 +276,7 @@
             <p>Bollywood, Hollywood, South Indian মুভি ও সিরিজ — Telegram বটে সার্চ করে ডাউনলোড লিংক পান।</p>
             <div class="actions">
               <a class="btn btn-primary" href="https://t.me/GetLatestMoviesBot" target="_blank" rel="noopener">বট ওপেন করুন</a>
-              <a class="btn" href="movies">🎬 All Movies</a>
+              <a class="btn" href="movies.php">🎬 All Movies</a>
               <a class="link" href="https://t.me/getlatestmoviebot" target="_blank" rel="noopener">t.me/getlatestmoviebot</a>
             </div>
           </article>
