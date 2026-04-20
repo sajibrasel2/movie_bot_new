@@ -68,6 +68,9 @@ if (!$skip) {
     array_unshift($movies, $data);  // newest first
 }
 
+// Remove movies older than 10 days
+$movies = cleanup_old_movies($movies);
+
 // Keep max 500 movies
 $movies = array_slice($movies, 0, 500);
 
@@ -81,6 +84,25 @@ echo json_encode(['ok' => true, 'slug' => $slug, 'count' => count($movies)]);
 
 
 // ── Helper functions ──
+
+function cleanup_old_movies($movies) {
+    $ten_days_ago = time() - (10 * 24 * 60 * 60);
+    $cleaned = [];
+    $removed = 0;
+    foreach ($movies as $m) {
+        $ts = strtotime($m['posted_at'] ?? 'now');
+        if ($ts >= $ten_days_ago) {
+            $cleaned[] = $m;
+        } else {
+            $removed++;
+        }
+    }
+    if ($removed > 0) {
+        // Log for debugging (optional)
+        error_log("cleanup_old_movies: removed $removed movies older than 10 days");
+    }
+    return $cleaned;
+}
 
 function generate_slug($title) {
     // Remove common brackets/suffixes like [DODI Repack], (2025), etc.

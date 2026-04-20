@@ -1,5 +1,24 @@
 <?php
-$movies = json_decode(file_get_contents(__DIR__.'/movies.json'), true) ?: [];
+$DATA_FILE = __DIR__.'/movies.json';
+$movies = json_decode(file_get_contents($DATA_FILE), true) ?: [];
+
+// Auto-delete movies older than 10 days
+$ten_days_ago = time() - (10 * 24 * 60 * 60);
+$cleaned = [];
+$changed = false;
+foreach ($movies as $m) {
+    $ts = strtotime($m['posted_at'] ?? 'now');
+    if ($ts >= $ten_days_ago) {
+        $cleaned[] = $m;
+    } else {
+        $changed = true;
+    }
+}
+if ($changed) {
+    $movies = $cleaned;
+    file_put_contents($DATA_FILE, json_encode($movies, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+}
+
 $site='https://techandclick.site'; $bot='https://t.me/GetLatestMoviesBot'; $ch='https://t.me/getlatestmoviebot';
 ?>
 <!doctype html>
