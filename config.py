@@ -14,7 +14,7 @@ TELEGRAM_BOT = {
 # =========================
 # Force Subscribe Channel
 # =========================
-FORCE_SUB_CHANNEL = "@getlatestmoviebot"  # Change this to your channel username
+FORCE_SUB_CHANNEL = "@getlatestmovienew"  # Channel username
 
 # =========================
 # Common Settings
