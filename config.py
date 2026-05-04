@@ -34,7 +34,7 @@ COMMON = {
 # =========================
 AUTO_POSTER = {
     "enabled": True,
-    "channel": "@getlatestmoviebot",  # Channel to post new uploads
+    "channel": "@getlatestmovienew",  # Channel to post new uploads
     "check_interval_minutes": 30,     # How often to check for new uploads
     "max_posts_per_check": 5,         # Max new posts per check cycle
     "posted_file": "posted_urls.txt",  # File to track already-posted URLs
@@ -45,7 +45,7 @@ AUTO_POSTER = {
 # =========================
 RELEASE_TRACKER = {
     "enabled": True,
-    "channel": "@getlatestmoviebot",   # Channel to post release alerts
+    "channel": "@getlatestmovienew",   # Channel to post release alerts
     "check_interval_minutes": 60,      # How often to check for new releases
     "delay_hours_after_release": 6,    # Wait 6 hours after release before searching
     "tmdb_url": "https://www.themoviedb.org/movie/upcoming",
