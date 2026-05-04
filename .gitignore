@@ -5,6 +5,7 @@ posted_urls.txt
 tracked_releases.json
 bot.log
 bot.pid
+watchdog.log
 movies.json
 sitemap-movies.xml
 promts/locks/
