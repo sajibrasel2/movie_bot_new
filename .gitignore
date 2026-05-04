@@ -7,5 +7,9 @@ bot.log
 bot.pid
 movies.json
 sitemap-movies.xml
+promts/locks/
+promts/logs/
+promts/media/
+promts/__pycache__/
 start_bot.sh
 test_*.py
