@@ -1409,6 +1409,10 @@ def _kill_existing_bot() -> None:
     try:
         with open(_PID_FILE, "r") as f:
             old_pid = int(f.read().strip())
+        # Don't kill ourselves (happens when watchdog restarts us)
+        if old_pid == os.getpid():
+            logger.info("PID file matches current process, skipping kill")
+            return
         os.kill(old_pid, 9)
         logger.info("Killed old bot process PID=%d", old_pid)
     except (ValueError, ProcessLookupError, PermissionError):
