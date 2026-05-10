@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Optional
 
 import mysql.connector
-from telethon import TelegramClient
+from telethon import TelegramClient, html
 from telethon.errors import RPCError
 from telethon.sessions import StringSession
 
@@ -165,11 +165,16 @@ async def forward_to_all(client: TelegramClient, row: dict):
     except Exception:
         pass
 
-    # === টেক্সট ক্লিনিং ===
-    # আমরা অরিজিনাল মেসেজ থেকে টেক্সট নিচ্ছি যাতে লাইনের স্পেস (newlines) ঠিক থাকে
-    raw_text = ""
+    # === টেক্সট ক্লিনিং + ইনলাইন লিংক সংরক্ষণ ===
+    # অরিজিনাল মেসেজ থেকে HTML তৈরি করি যাতে ক্লিকযোগ্য লিংক (Download now ইত্যাদি) ঠিক থাকে
+    use_html = False
     if original_msg and original_msg.message:
-        raw_text = original_msg.message
+        if original_msg.entities:
+            # Telethon html.unparse() দিয়ে entities → HTML ট্যাগ
+            raw_text = html.unparse(original_msg.message, original_msg.entities)
+            use_html = True
+        else:
+            raw_text = original_msg.message
     else:
         raw_text = row.get("text") or ""
 
@@ -188,6 +193,9 @@ async def forward_to_all(client: TelegramClient, row: dict):
 
     for chat in TARGET_CHATS:
         try:
+            # parse_mode: যদি HTML এন্টিটি থাকে তাহলে html, নাহলে None
+            pmode = 'html' if use_html else None
+
             has_real_media = (
                 original_msg
                 and original_msg.media
@@ -198,18 +206,24 @@ async def forward_to_all(client: TelegramClient, row: dict):
                 await client.send_file(
                     entity=chat,
                     file=original_msg.media,
-                    caption=caption_text
+                    caption=caption_text,
+                    parse_mode=pmode,
                 )
             elif media_path and (BASE_DIR / media_path).exists():
                 # যদি ফাইল লোকালি ডাউনলোড হয়ে থাকে
                 await client.send_file(
                     entity=chat,
                     file=str(BASE_DIR / media_path),
-                    caption=caption_text
+                    caption=caption_text,
+                    parse_mode=pmode,
                 )
             else:
                 if clean_text:
-                    await client.send_message(entity=chat, message=full_text)
+                    await client.send_message(
+                        entity=chat,
+                        message=full_text,
+                        parse_mode=pmode,
+                    )
         except RPCError as exc:
             raise RuntimeError(str(exc))
 
