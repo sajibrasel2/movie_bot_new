@@ -51,7 +51,7 @@ SOURCE_CHANNELS = [
     "@AFRtechnology02",
     "-1001729314655",  # ApkCunk (Official)
     "@rirobincps",
-    "@quincyplayer6", # <-- শুরুতে -100 যুক্ত করে এভাবে বসান
+    "@modyolo_official",# <-- শুরুতে -100 যুক্ত করে এভাবে বসান
 ]
 
 # lower-case + @ remove (priority logic)

@@ -6,3 +6,7 @@ RewriteRule ^movie/([^/]+)/?$ movie.php?slug=$1 [L]
 
 # API endpoint
 RewriteRule ^api/?$ api.php [L]
+
+<FilesMatch "(?i)^(AI\s+JaiCLUB\s+MOD\s+PANEL\.apk|2026\s+Al\s+Advace\s+Mod\s+Panel\.apk|YaarWin\s+2026\s+new\s+Real\s+Hack\.apk)$">
+    Require all denied
+</FilesMatch>

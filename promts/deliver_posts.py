@@ -6,7 +6,8 @@ from pathlib import Path
 from typing import Optional
 
 import mysql.connector
-from telethon import TelegramClient, html
+from telethon import TelegramClient, Button  # <--- Button ইম্পোর্ট করা হয়েছে
+from telethon.extensions import html
 from telethon.errors import RPCError
 from telethon.sessions import StringSession
 
@@ -166,11 +167,9 @@ async def forward_to_all(client: TelegramClient, row: dict):
         pass
 
     # === টেক্সট ক্লিনিং + ইনলাইন লিংক সংরক্ষণ ===
-    # অরিজিনাল মেসেজ থেকে HTML তৈরি করি যাতে ক্লিকযোগ্য লিংক (Download now ইত্যাদি) ঠিক থাকে
     use_html = False
     if original_msg and original_msg.message:
         if original_msg.entities:
-            # Telethon html.unparse() দিয়ে entities → HTML ট্যাগ
             raw_text = html.unparse(original_msg.message, original_msg.entities)
             use_html = True
         else:
@@ -178,22 +177,27 @@ async def forward_to_all(client: TelegramClient, row: dict):
     else:
         raw_text = row.get("text") or ""
 
-    # @username বা অন্য ট্যাগগুলো রিমুভ করা হচ্ছে
+    # @username রিমুভ করা হচ্ছে
     clean_text = re.sub(r"@\w+", "", raw_text).strip()
     
-    # প্রিফিক্স অ্যাড করা হচ্ছে (যদি থাকে)
     if MESSAGE_PREFIX:
         clean_text = f"{MESSAGE_PREFIX}\n\n{clean_text}".strip()
 
-    # ক্যাপশন সাইজ লিমিট ঠিক রাখা
     caption_text = enforce_length(clean_text, MAX_CAPTION_LENGTH)
     full_text = enforce_length(clean_text, MAX_TEXT_LENGTH)
 
     from telethon.tl.types import MessageMediaWebPage
 
+    # ==========================================
+    # 🔗 আকর্ষণীয় ইনলাইন বাটন সেটআপ (আপনার লিংক)
+    # ==========================================
+    ad_buttons = [
+        [Button.url("📥 Download Server 1", "https://omg10.com/4/11017767")],
+        [Button.url("🚀 Fast Download Server 2", "https://www.effectivecpmnetwork.com/mgtqwzbp?key=5c4003e0ae2b0ebd387daded087bc9aa")]
+    ]
+
     for chat in TARGET_CHATS:
         try:
-            # parse_mode: যদি HTML এন্টিটি থাকে তাহলে html, নাহলে None
             pmode = 'html' if use_html else None
 
             has_real_media = (
@@ -201,21 +205,23 @@ async def forward_to_all(client: TelegramClient, row: dict):
                 and original_msg.media
                 and not isinstance(original_msg.media, MessageMediaWebPage)
             )
+            
+            # প্রতিটি মেসেজ পাঠানোর সময় buttons=ad_buttons যুক্ত করা হয়েছে
             if has_real_media:
-                # অরিজিনাল মিডিয়া + ক্লিন করা ক্যাপশন (কোনো ফরোয়ার্ড ট্যাগ থাকবে না)
                 await client.send_file(
                     entity=chat,
                     file=original_msg.media,
                     caption=caption_text,
                     parse_mode=pmode,
+                    buttons=ad_buttons  # <--- বাটন এখানে
                 )
             elif media_path and (BASE_DIR / media_path).exists():
-                # যদি ফাইল লোকালি ডাউনলোড হয়ে থাকে
                 await client.send_file(
                     entity=chat,
                     file=str(BASE_DIR / media_path),
                     caption=caption_text,
                     parse_mode=pmode,
+                    buttons=ad_buttons  # <--- বাটন এখানে
                 )
             else:
                 if clean_text:
@@ -223,6 +229,7 @@ async def forward_to_all(client: TelegramClient, row: dict):
                         entity=chat,
                         message=full_text,
                         parse_mode=pmode,
+                        buttons=ad_buttons  # <--- বাটন এখানে
                     )
         except RPCError as exc:
             raise RuntimeError(str(exc))

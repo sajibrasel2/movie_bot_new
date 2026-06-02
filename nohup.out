@@ -1,0 +1,32 @@
+2026-04-25 18:07:27,624 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-04-25 18:07:27,624 - __main__ - INFO - AutoPost: enabled, checking every 30 min
+2026-04-25 18:07:27,625 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-04-25 18:07:27,625 - __main__ - INFO - ReleaseTracker: enabled, checking every 60 min
+2026-04-25 18:07:27,625 - __main__ - INFO - Bot starting with 9 sources...
+2026-04-25 18:07:27,696 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8294665841:AAGA0fldnAJj0dazXQsa9p67HARnqACwW0E/getMe "HTTP/1.1 200 OK"
+2026-04-25 18:07:27,732 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8294665841:AAGA0fldnAJj0dazXQsa9p67HARnqACwW0E/deleteWebhook "HTTP/1.1 200 OK"
+2026-04-25 18:07:27,733 - apscheduler.scheduler - INFO - Added job "_post_to_channel" to job store "default"
+2026-04-25 18:07:27,733 - apscheduler.scheduler - INFO - Added job "_check_releases_and_post" to job store "default"
+2026-04-25 18:07:27,733 - apscheduler.scheduler - INFO - Scheduler started
+2026-04-25 18:07:27,733 - telegram.ext.Application - INFO - Application started
+2026-04-25 18:07:27,780 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8294665841:AAGA0fldnAJj0dazXQsa9p67HARnqACwW0E/getUpdates "HTTP/1.1 200 OK"
+2026-04-25 18:07:27,780 - __main__ - INFO - handle_message: user=5785952613 query='N'
+2026-04-25 18:07:27,974 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8294665841:AAGA0fldnAJj0dazXQsa9p67HARnqACwW0E/getChatMember "HTTP/1.1 200 OK"
+2026-04-25 18:07:28,175 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8294665841:AAGA0fldnAJj0dazXQsa9p67HARnqACwW0E/sendChatAction "HTTP/1.1 200 OK"
+2026-04-25 18:07:28,392 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8294665841:AAGA0fldnAJj0dazXQsa9p67HARnqACwW0E/sendMessage "HTTP/1.1 200 OK"
+2026-04-25 18:07:28,393 - __main__ - INFO - Fuzzy variants for 'N': ['mn', 'nnn', 'nn', 'nm', 'm']
+/home/techandc/movie_bot_new/bot.py:391: MarkupResemblesLocatorWarning: The input looks more like a filename than markup. You may want to open this file and pass the filehandle into Beautiful Soup.
+  title = BeautifulSoup(title_html, "lxml").get_text(strip=True)
+2026-04-25 18:07:37,618 - apscheduler.executors.default - INFO - Running job "_post_to_channel (trigger: interval[0:30:00], next run at: 2026-04-25 18:37:37 UTC)" (scheduled at 2026-04-25 18:07:37.607231+00:00)
+2026-04-25 18:07:37,618 - __main__ - INFO - AutoPost: checking for new uploads...
+2026-04-25 18:07:37,797 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8294665841:AAGA0fldnAJj0dazXQsa9p67HARnqACwW0E/getUpdates "HTTP/1.1 200 OK"
+2026-04-25 18:07:47,818 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8294665841:AAGA0fldnAJj0dazXQsa9p67HARnqACwW0E/getUpdates "HTTP/1.1 200 OK"
+2026-04-25 18:07:48,399 - __main__ - ERROR - Search error for CTGMovies: 
+2026-04-25 18:07:57,839 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8294665841:AAGA0fldnAJj0dazXQsa9p67HARnqACwW0E/getUpdates "HTTP/1.1 200 OK"
+2026-04-25 18:08:07,857 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8294665841:AAGA0fldnAJj0dazXQsa9p67HARnqACwW0E/getUpdates "HTTP/1.1 200 OK"
+2026-04-25 18:08:08,400 - __main__ - ERROR - Search error for Elaach: 
+/home/techandc/movie_bot_new/bot.py:835: MarkupResemblesLocatorWarning: The input looks more like a filename than markup. You may want to open this file and pass the filehandle into Beautiful Soup.
+  title = BeautifulSoup(title_html, "lxml").get_text(strip=True)
+2026-04-25 18:08:17,874 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8294665841:AAGA0fldnAJj0dazXQsa9p67HARnqACwW0E/getUpdates "HTTP/1.1 200 OK"
+2026-04-25 18:08:24,403 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8294665841:AAGA0fldnAJj0dazXQsa9p67HARnqACwW0E/getUpdates "HTTP/1.1 200 OK"
+2026-04-25 18:08:24,404 - telegram.ext.Application - INFO - Application is stopping. This might take a moment.
