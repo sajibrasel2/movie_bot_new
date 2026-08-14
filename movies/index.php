@@ -20,6 +20,9 @@ $categories = getAllCategories();
 $heroMovie = !empty($featuredMovies) ? $featuredMovies[0] : (!empty($recentMovies) ? $recentMovies[0] : null);
 
 $showAds = shouldShowAds();
+
+// Slider: latest 5 movies with poster
+$sliderMovies = getRecentMovies(5, 0);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -116,41 +119,45 @@ $showAds = shouldShowAds();
         </form>
     </nav>
 
-    <?php if ($heroMovie): ?>
-    <!-- Hero Section -->
-    <section class="hero" style="background-image: linear-gradient(to right, rgba(0,0,0,0.9), rgba(0,0,0,0.3)), url('<?php echo htmlspecialchars($heroMovie['poster_url']); ?>');">
-        <div class="hero-content">
-            <h1><?php echo htmlspecialchars($heroMovie['movie_title']); ?></h1>
-            
-            <div class="meta">
-                <?php if ($heroMovie['quality']): ?>
-                    <span class="quality"><?php echo htmlspecialchars($heroMovie['quality']); ?></span>
-                <?php endif; ?>
-                
-                <?php if ($heroMovie['year']): ?>
-                    <span><?php echo htmlspecialchars($heroMovie['year']); ?></span>
-                <?php endif; ?>
-                
-                <?php if ($heroMovie['movie_size_readable']): ?>
-                    <span><?php echo htmlspecialchars($heroMovie['movie_size_readable']); ?></span>
-                <?php endif; ?>
-            </div>
-            
-            <div class="description">
-                Watch and download <?php echo htmlspecialchars($heroMovie['movie_title']); ?> in high quality. 
-                Available in multiple formats with direct download links.
-            </div>
-            
-            <div class="buttons">
-                <a href="/movie.php?slug=<?php echo htmlspecialchars($heroMovie['slug']); ?>" class="btn btn-primary">
-                    <i class="fas fa-play"></i> Watch Now
-                </a>
-                <a href="/movie.php?slug=<?php echo htmlspecialchars($heroMovie['slug']); ?>#download" class="btn btn-secondary">
-                    <i class="fas fa-download"></i> Download
-                </a>
+    <?php if (!empty($sliderMovies)): ?>
+    <!-- Hero Slider -->
+    <div class="hero-slider" id="heroSlider">
+        <?php foreach ($sliderMovies as $i => $slide): ?>
+        <div class="hero-slide <?php echo $i === 0 ? 'active' : ''; ?>"
+             style="background-image: linear-gradient(to right, rgba(0,0,0,0.88) 35%, rgba(0,0,0,0.25) 100%), url('<?php echo htmlspecialchars($slide['poster_url']); ?>');">
+            <div class="hero-content">
+                <h1><?php echo htmlspecialchars($slide['movie_title']); ?></h1>
+                <div class="meta">
+                    <?php if ($slide['quality']): ?>
+                        <span class="quality"><?php echo htmlspecialchars($slide['quality']); ?></span>
+                    <?php endif; ?>
+                    <?php if ($slide['year']): ?>
+                        <span><?php echo $slide['year']; ?></span>
+                    <?php endif; ?>
+                </div>
+                <div class="buttons">
+                    <a href="/movie.php?slug=<?php echo htmlspecialchars($slide['slug']); ?>" class="btn btn-primary">
+                        <i class="fas fa-play"></i> Watch Now
+                    </a>
+                    <a href="/movie.php?slug=<?php echo htmlspecialchars($slide['slug']); ?>#download" class="btn btn-secondary">
+                        <i class="fas fa-download"></i> Download
+                    </a>
+                </div>
             </div>
         </div>
-    </section>
+        <?php endforeach; ?>
+
+        <!-- Dots -->
+        <div class="slider-dots">
+            <?php foreach ($sliderMovies as $i => $slide): ?>
+                <span class="slider-dot <?php echo $i === 0 ? 'active' : ''; ?>" data-index="<?php echo $i; ?>"></span>
+            <?php endforeach; ?>
+        </div>
+
+        <!-- Arrows -->
+        <button class="slider-arrow slider-prev" id="sliderPrev">&#10094;</button>
+        <button class="slider-arrow slider-next" id="sliderNext">&#10095;</button>
+    </div>
     <?php endif; ?>
 
     <!-- Main Content with Sidebar -->
@@ -401,6 +408,55 @@ $showAds = shouldShowAds();
     
     <!-- Click Protection System -->
     <script src="/assets/js/click-protection.js"></script>
+
+    <!-- Hero Slider Script -->
+    <script>
+    (function(){
+        var slides = document.querySelectorAll('.hero-slide');
+        var dots   = document.querySelectorAll('.slider-dot');
+        if (!slides.length) return;
+
+        var current = 0;
+        var timer;
+
+        function goTo(n) {
+            slides[current].classList.remove('active');
+            dots[current].classList.remove('active');
+            current = (n + slides.length) % slides.length;
+            slides[current].classList.add('active');
+            dots[current].classList.add('active');
+        }
+
+        function next() { goTo(current + 1); }
+        function prev() { goTo(current - 1); }
+
+        function startAuto() {
+            timer = setInterval(next, 4000);
+        }
+        function resetAuto() {
+            clearInterval(timer);
+            startAuto();
+        }
+
+        document.getElementById('sliderNext').addEventListener('click', function(){ next(); resetAuto(); });
+        document.getElementById('sliderPrev').addEventListener('click', function(){ prev(); resetAuto(); });
+
+        dots.forEach(function(dot, i){
+            dot.addEventListener('click', function(){ goTo(i); resetAuto(); });
+        });
+
+        // Touch swipe support
+        var touchStartX = 0;
+        var slider = document.getElementById('heroSlider');
+        slider.addEventListener('touchstart', function(e){ touchStartX = e.touches[0].clientX; }, {passive:true});
+        slider.addEventListener('touchend', function(e){
+            var diff = touchStartX - e.changedTouches[0].clientX;
+            if (Math.abs(diff) > 50) { diff > 0 ? next() : prev(); resetAuto(); }
+        }, {passive:true});
+
+        startAuto();
+    })();
+    </script>
     
     <?php if ($showAds): ?>
     <!-- Social Bar / Footer Ads -->
