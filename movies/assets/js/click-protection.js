@@ -49,7 +49,7 @@
         var orig     = btn.innerHTML;
         var origBg   = btn.style.background;
 
-        btn.innerHTML = '<i class="fas fa-redo"></i>&nbsp; আবার ক্লিক করুন ↵';
+        btn.innerHTML = '<i class="fas fa-redo"></i>&nbsp; Click again to download';
         btn.style.background = '#10b981';
 
         var timer = setTimeout(function () {
@@ -60,6 +60,8 @@
 
         // store timer so 2nd click can clear it
         btn._adTimer = timer;
+        btn._origHTML = orig;
+        btn._origBg = origBg;
     }
 
     // Main click handler (runs in capture phase to run before href)
@@ -82,11 +84,24 @@
             showFeedback(btn);
 
         } else {
-            // ── SECOND CLICK: allow normal href ──
+            // ── SECOND CLICK: restore original and follow href ──
             clearTimeout(btn._adTimer);
             clickState.set(btn, 0);
-            // restore original text (if not already)
-            // no preventDefault → browser follows the <a href>
+
+            // Restore original button appearance
+            if (btn._origHTML) btn.innerHTML = btn._origHTML;
+            if (btn._origBg !== undefined) btn.style.background = btn._origBg;
+
+            // Navigate to the href
+            var href = btn.getAttribute('href');
+            if (href && href !== '#') {
+                if (btn.getAttribute('target') === '_blank') {
+                    window.open(href, '_blank', 'noopener,noreferrer');
+                } else {
+                    window.location.href = href;
+                }
+            }
+            e.preventDefault(); // prevent double-fire
         }
     }
 
