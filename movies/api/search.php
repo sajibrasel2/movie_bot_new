@@ -41,5 +41,5 @@ try {
 
     echo json_encode($results);
 } catch (Exception $e) {
-    echo json_encode([]);
+    echo json_encode(['error' => $e->getMessage(), 'results' => []]);
 }
