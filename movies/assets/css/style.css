@@ -241,10 +241,11 @@ body {
 /* Hero Section - Enhanced */
 .hero {
     position: relative;
-    height: 85vh;
+    height: auto;
+    min-height: 280px;
     display: flex;
     align-items: center;
-    padding: 0 4%;
+    padding: 30px 4%;
     margin-top: 70px;
     background: linear-gradient(to right, rgba(0,0,0,0.95) 40%, rgba(0,0,0,0.3) 100%),
                 var(--netflix-dark);
@@ -1627,4 +1628,69 @@ body {
     .content-area {
         width: 100% !important;
     }
+}
+
+/* ── Fix excessive gaps ── */
+
+/* Hero section bottom gap */
+.hero-section,
+.hero,
+section.hero {
+    margin-bottom: 0 !important;
+    padding-bottom: 20px !important;
+}
+
+/* Main wrapper top gap */
+.main-wrapper {
+    margin-top: 10px !important;
+    padding-top: 0 !important;
+}
+
+/* Movie section gaps */
+.movie-section {
+    padding: 15px 0 10px !important;
+    margin-bottom: 10px !important;
+}
+
+/* Section title gap */
+.section-title {
+    margin-bottom: 12px !important;
+    margin-top: 0 !important;
+}
+
+/* Remove extra padding on content area */
+.content-area {
+    padding-top: 0 !important;
+}
+
+/* Featured section gap */
+section.movie-section + section.movie-section {
+    margin-top: 0 !important;
+    padding-top: 10px !important;
+}
+
+/* Mobile: tighter gaps */
+@media (max-width: 768px) {
+    .hero-section,
+    .hero {
+        padding-bottom: 10px !important;
+        margin-bottom: 0 !important;
+    }
+    .main-wrapper {
+        margin-top: 5px !important;
+    }
+    .movie-section {
+        padding: 10px 0 5px !important;
+    }
+}
+
+/* ── Hero size fix ── */
+@media (max-width: 768px) {
+    .hero {
+        min-height: 180px !important;
+        padding: 20px 4% !important;
+        margin-top: 60px !important;
+    }
+    .hero h1 { font-size: 1.2rem !important; }
+    .hero .description { display: none; }
 }
