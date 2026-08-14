@@ -136,48 +136,45 @@ $showAds = shouldShowAds();
     <section class="movies-section">
         <div class="container">
             <?php if (!empty($movies)): ?>
-                <div class="movies-grid">
+                <div class="movie-list">
                     <?php foreach ($movies as $movie): ?>
-                        <div class="movie-card" data-slug="<?php echo htmlspecialchars($movie['slug']); ?>">
-                            <div class="movie-poster">
+                        <div class="movie-list-item" data-slug="<?php echo htmlspecialchars($movie['slug']); ?>" onclick="window.location.href='/movie.php?slug=<?php echo htmlspecialchars($movie['slug']); ?>'">
+                            
+                            <!-- Poster (small) -->
+                            <div class="movie-list-poster">
                                 <img src="<?php echo htmlspecialchars($movie['poster_url']); ?>" 
                                      alt="<?php echo htmlspecialchars($movie['movie_title']); ?>"
                                      loading="lazy">
-                                
-                                <?php 
-                                // Quality badges - always visible on poster
-                                $qualities = [];
-                                if (!empty($movie['available_qualities'])) {
-                                    $qualities = json_decode($movie['available_qualities'], true);
-                                }
-                                
-                                if (!empty($qualities) && is_array($qualities)):
-                                ?>
-                                    <div class="quality-badges-group">
-                                        <?php foreach ($qualities as $q): ?>
-                                            <span class="quality-badge"><?php echo htmlspecialchars($q); ?></span>
-                                        <?php endforeach; ?>
-                                    </div>
-                                <?php elseif ($movie['quality']): ?>
-                                    <span class="quality-badge"><?php echo htmlspecialchars($movie['quality']); ?></span>
-                                <?php endif; ?>
-                                
-                                <div class="movie-overlay">
-                                    <button class="play-btn">
-                                        <i class="fas fa-play"></i> Watch Now
-                                    </button>
-                                </div>
                             </div>
-                            <div class="movie-info">
+                            
+                            <!-- Info -->
+                            <div class="movie-list-info">
                                 <h3><?php echo htmlspecialchars($movie['movie_title']); ?></h3>
-                                <div class="movie-meta">
+                                <div class="movie-list-meta">
                                     <?php if ($movie['year']): ?>
                                         <span><i class="fas fa-calendar"></i> <?php echo $movie['year']; ?></span>
                                     <?php endif; ?>
                                     <?php if ($movie['movie_size_readable']): ?>
                                         <span><i class="fas fa-hdd"></i> <?php echo $movie['movie_size_readable']; ?></span>
                                     <?php endif; ?>
+                                    <?php 
+                                    $qualities = [];
+                                    if (!empty($movie['available_qualities'])) {
+                                        $qualities = json_decode($movie['available_qualities'], true);
+                                    }
+                                    if (!empty($qualities) && is_array($qualities)):
+                                        foreach ($qualities as $q): ?>
+                                            <span class="quality-badge-sm"><?php echo htmlspecialchars($q); ?></span>
+                                        <?php endforeach;
+                                    elseif ($movie['quality']): ?>
+                                        <span class="quality-badge-sm"><?php echo htmlspecialchars($movie['quality']); ?></span>
+                                    <?php endif; ?>
                                 </div>
+                            </div>
+
+                            <!-- Arrow -->
+                            <div class="movie-list-arrow">
+                                <i class="fas fa-chevron-right"></i>
                             </div>
                         </div>
                     <?php endforeach; ?>
