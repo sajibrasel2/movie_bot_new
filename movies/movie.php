@@ -276,7 +276,7 @@ $showAds = shouldShowAds();
                                         $sourceClass = strtolower($source);
                                         
                                         // Wrap download URL with ad redirect
-                                        $downloadUrl = wrapWithAdRedirect($url, 'download_' . $quality . '_' . $source);
+                                        $downloadUrl = $url;
                                         ?>
                                         <a href="<?php echo htmlspecialchars($downloadUrl); ?>" 
                                            target="_blank" 
@@ -310,7 +310,7 @@ $showAds = shouldShowAds();
                             $sourceClass = strtolower($source);
                             
                             // Wrap download URL with ad redirect
-                            $downloadUrl = wrapWithAdRedirect($url, 'download_' . $source);
+                            $downloadUrl = $url;
                             ?>
                             <a href="<?php echo htmlspecialchars($downloadUrl); ?>" 
                                target="_blank" 
