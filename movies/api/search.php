@@ -20,11 +20,13 @@ try {
     $stmt = $conn->prepare("
         SELECT id, movie_title, slug, poster_url, quality, year, available_qualities
         FROM mlsbd_movies
-        WHERE movie_title LIKE :q OR base_movie_title LIKE :q
+        WHERE movie_title LIKE :q1 OR base_movie_title LIKE :q2
         ORDER BY created_at DESC
         LIMIT 8
     ");
-    $stmt->bindValue(':q', '%' . $q . '%');
+    $like = '%' . $q . '%';
+    $stmt->bindValue(':q1', $like);
+    $stmt->bindValue(':q2', $like);
     $stmt->execute();
     $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
