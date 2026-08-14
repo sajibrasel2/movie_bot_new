@@ -124,6 +124,10 @@ INSERT IGNORE INTO direct_link_ads (ad_name, ad_network, redirect_url, display_p
 ('Adsterra Direct Link', 'adsterra', 'https://omg10.com/4/11017767', 10),
 ('Monetag Direct Link', 'monetag', 'https://www.effectivecpmnetwork.com/mgtqwzbp?key=5c4003e0ae2b0ebd387daded087bc9aa', 10);
 
+-- Update if already exists
+UPDATE direct_link_ads SET redirect_url='https://omg10.com/4/11017767', is_active=1 WHERE ad_network='adsterra';
+UPDATE direct_link_ads SET redirect_url='https://www.effectivecpmnetwork.com/mgtqwzbp?key=5c4003e0ae2b0ebd387daded087bc9aa', is_active=1 WHERE ad_network='monetag';
+
 -- 9. Insert settings
 INSERT IGNORE INTO movie_ads_settings (setting_key, setting_value, description) VALUES
 ('direct_link_enabled', '1', 'Enable/disable direct link ads'),

@@ -354,11 +354,6 @@ $showAds = shouldShowAds();
     <!-- JavaScript -->
     <script src="/assets/js/main.js"></script>
     
-    <!-- Ad URL config -->
-    <script>
-    window.SITE_AD_URL = '';
-    </script>
-    
     <!-- Click Protection System -->
     <script src="/assets/js/click-protection.js"></script>
     

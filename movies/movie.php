@@ -407,13 +407,6 @@ $showAds = shouldShowAds();
     <!-- JavaScript -->
     <script src="/assets/js/main.js"></script>
     
-    <!-- Ad URL config — change this to your ad network direct/popunder link -->
-    <script>
-    // ▼▼▼ আপনার Ad Network URL এখানে set করুন ▼▼▼
-    window.SITE_AD_URL = '';
-    // উদাহরণ: window.SITE_AD_URL = 'https://www.profitableratecpm.com/xxxxxxxx';
-    </script>
-    
     <!-- Click Protection System -->
     <script src="/assets/js/click-protection.js"></script>
 </body>

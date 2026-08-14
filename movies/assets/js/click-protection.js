@@ -1,100 +1,114 @@
 /**
  * Download Button Click Protection with Ad System
- * First click  → Ad opens in new tab, button shows "Click again to download"
- * Second click → Goes to actual download link
+ * ─────────────────────────────────────────────────
+ * 1st click → opens a random ad URL in a new tab + shows "আবার ক্লিক করুন"
+ * 2nd click → follows the real download href
  *
- * Config: set AD_URL below to your ad network popunder/direct link URL
+ * Ad URLs are fetched from /get_ad_links.php (populated via Dashboard → Direct Links)
  */
 
 (function () {
     'use strict';
 
-    // =====================================================
-    // ▼▼▼ আপনার Ad Network URL এখানে দিন ▼▼▼
-    // =====================================================
-    var AD_URL = window.SITE_AD_URL || '';
-    // উদাহরণ: 'https://www.profitableratecpm.com/xxxxxxxx'
-    // অথবা যেকোনো PopAds / Adsterra direct link URL
-    // =====================================================
+    // ── Ad pool (loaded async from database) ──
+    var adPool = [];
 
-    // Click state per element (WeakMap so no memory leak)
+    // Load ads from server
+    function loadAdLinks() {
+        fetch('/get_ad_links.php', { cache: 'no-store' })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (Array.isArray(data) && data.length > 0) {
+                    adPool = data;
+                }
+            })
+            .catch(function () { /* silent */ });
+    }
+
+    // Pick a weighted-random ad from pool
+    function pickAd() {
+        if (adPool.length === 0) return null;
+        // Simple random (priority weighting can be added later)
+        return adPool[Math.floor(Math.random() * adPool.length)];
+    }
+
+    // Track click via PHP
+    function trackClick(adId, context) {
+        fetch('/track_ad_click.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ad_id: adId, context: context || 'download' })
+        }).catch(function () { /* silent */ });
+    }
+
+    // ── Per-button click state ──
     var clickState = new WeakMap();
 
-    // Track ad click via PHP (optional analytics)
-    function trackAdClick() {
-        try {
-            fetch('/track_ad_click.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ context: 'download_btn' })
-            });
-        } catch (e) { /* silent */ }
-    }
-
-    // Show feedback on button after first click
+    // Visual feedback on button after 1st click
     function showFeedback(btn) {
-        var original = btn.innerHTML;
-        var originalBg = btn.style.background;
+        var orig     = btn.innerHTML;
+        var origBg   = btn.style.background;
 
-        btn.innerHTML = '<i class="fas fa-redo"></i> আবার ক্লিক করুন';
+        btn.innerHTML = '<i class="fas fa-redo"></i>&nbsp; আবার ক্লিক করুন ↵';
         btn.style.background = '#10b981';
-        btn.style.transition = 'background 0.3s';
 
-        // Reset after 12 seconds (if user doesn't click again)
-        setTimeout(function () {
-            btn.innerHTML = original;
-            btn.style.background = originalBg;
+        var timer = setTimeout(function () {
+            btn.innerHTML = orig;
+            btn.style.background = origBg;
             clickState.set(btn, 0);
-        }, 12000);
+        }, 12000); // reset after 12 s if user doesn't click again
+
+        // store timer so 2nd click can clear it
+        btn._adTimer = timer;
     }
 
-    // Handle protected click on a download button
-    function handleDownloadClick(e) {
-        var btn = e.currentTarget;
+    // Main click handler (runs in capture phase to run before href)
+    function handleClick(e) {
+        var btn   = e.currentTarget;
         var count = clickState.get(btn) || 0;
 
         if (count === 0) {
-            // ── First click ──
+            // ── FIRST CLICK: open ad, block navigation ──
             e.preventDefault();
             e.stopImmediatePropagation();
 
-            // Open ad in new tab (if AD_URL is set)
-            if (AD_URL && AD_URL.length > 5) {
-                window.open(AD_URL, '_blank', 'noopener,noreferrer');
-                trackAdClick();
+            var ad = pickAd();
+            if (ad && ad.url) {
+                window.open(ad.url, '_blank', 'noopener,noreferrer');
+                trackClick(ad.id, btn.dataset.context || 'download');
             }
 
             clickState.set(btn, 1);
             showFeedback(btn);
 
         } else {
-            // ── Second click ── allow the original href to work normally
+            // ── SECOND CLICK: allow normal href ──
+            clearTimeout(btn._adTimer);
             clickState.set(btn, 0);
-            // do nothing → browser follows the <a href>
+            // restore original text (if not already)
+            // no preventDefault → browser follows the <a href>
         }
     }
 
-    // Apply protection to all .download-btn elements
+    // Attach handler to all .download-btn links
     function applyProtection() {
         document.querySelectorAll('a.download-btn').forEach(function (btn) {
-            // Avoid double-binding
             if (btn.dataset.adProtected) return;
             btn.dataset.adProtected = '1';
-            btn.addEventListener('click', handleDownloadClick, true);
+            btn.addEventListener('click', handleClick, true); // capture
         });
     }
 
-    // Init on DOM ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', applyProtection);
-    } else {
+    // Init
+    document.addEventListener('DOMContentLoaded', function () {
+        loadAdLinks();
         applyProtection();
-    }
+    });
 
-    // Re-apply if new buttons are added dynamically
+    // Re-apply if buttons added dynamically (AJAX / SPA)
     new MutationObserver(function (mutations) {
-        for (var m of mutations) {
-            if (m.addedNodes.length) {
+        for (var i = 0; i < mutations.length; i++) {
+            if (mutations[i].addedNodes.length) {
                 applyProtection();
                 break;
             }
