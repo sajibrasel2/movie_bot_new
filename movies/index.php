@@ -52,16 +52,21 @@ function renderCard($movie) {
     echo '</div>';
 }
 
-// Helper: render a section row
+// Helper: render a horizontal scroll section row
 function renderSection($title, $icon, $movies, $browseUrl = '') {
     if (empty($movies)) return;
+    $id = 'row_' . md5($title);
     echo '<section class="movie-section">';
     echo '<div class="section-header">';
     echo '<h2 class="section-title"><i class="fas '.$icon.'"></i> '.$title.'</h2>';
     if ($browseUrl) echo '<a href="'.$browseUrl.'" class="see-all">See All <i class="fas fa-chevron-right"></i></a>';
     echo '</div>';
-    echo '<div class="movie-grid">';
+    echo '<div class="scroll-section-wrapper">';
+    echo '  <button class="scroll-arrow-btn scroll-arrow-left" onclick="scrollRow(\''.$id.'\',-1)">&#10094;</button>';
+    echo '  <div class="movie-scroll-row" id="'.$id.'">';
     foreach ($movies as $m) renderCard($m);
+    echo '  </div>';
+    echo '  <button class="scroll-arrow-btn scroll-arrow-right" onclick="scrollRow(\''.$id.'\',1)">&#10095;</button>';
     echo '</div>';
     echo '</section>';
 }
@@ -282,6 +287,14 @@ function renderSection($title, $icon, $movies, $browseUrl = '') {
 
     <script src="/assets/js/main.js"></script>
     <script src="/assets/js/click-protection.js"></script>
+
+    <!-- Row Scroll Script -->
+    <script>
+    function scrollRow(id, dir) {
+        var el = document.getElementById(id);
+        if (el) el.scrollBy({ left: dir * 320, behavior: 'smooth' });
+    }
+    </script>
 
     <!-- Slider Script -->
     <script>

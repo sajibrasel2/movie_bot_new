@@ -1965,3 +1965,75 @@ section.movie-section + section.movie-section {
 @media (max-width: 480px) {
     .quality-cards { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* =====================================================
+   HORIZONTAL SCROLL ROWS (Bengali, Hindi, Web Series)
+   ===================================================== */
+
+/* Scroll row container */
+.movie-scroll-row {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 8px;
+}
+.movie-scroll-row::-webkit-scrollbar { display: none; }
+
+/* Each card in scroll row */
+.movie-scroll-row .movie-card {
+    flex: 0 0 140px;
+    scroll-snap-align: start;
+}
+
+/* On desktop: use normal grid (no horizontal scroll) */
+@media (min-width: 769px) {
+    .movie-scroll-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        overflow-x: visible;
+        scroll-snap-type: none;
+    }
+    .movie-scroll-row .movie-card {
+        flex: unset;
+    }
+}
+
+/* Scroll hint arrows on mobile */
+.scroll-section-wrapper {
+    position: relative;
+}
+.scroll-arrow-btn {
+    display: none;
+}
+@media (min-width: 769px) {
+    .scroll-arrow-btn {
+        display: flex;
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 32px;
+        height: 32px;
+        background: rgba(229,9,20,0.85);
+        color: #fff;
+        border: none;
+        border-radius: 50%;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 5;
+        font-size: 0.85rem;
+        transition: background 0.2s;
+    }
+    .scroll-arrow-btn:hover { background: #E50914; }
+    .scroll-arrow-left  { left: -16px; }
+    .scroll-arrow-right { right: -16px; }
+}
+
+/* Fix category bar chip size */
+.cat-chip {
+    font-size: 0.82rem !important;
+    padding: 7px 14px !important;
+}
