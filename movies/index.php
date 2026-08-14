@@ -2,17 +2,23 @@
 require_once 'config.php';
 require_once 'ads_helper.php';
 
+// Pagination
+$page    = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+$perPage = 24;
+$offset  = ($page - 1) * $perPage;
+
 // Get featured and recent movies
 $featuredMovies = getFeaturedMovies(6);
-$recentMovies = getRecentMovies(24);
+$recentMovies   = getRecentMovies($perPage, $offset);
+$totalMovies    = getTotalMovieCount();
+$totalPages     = ceil($totalMovies / $perPage);
 
 // Get all categories with movie count
 $categories = getAllCategories();
 
-// Get hero movie (latest featured or latest movie)
+// Get hero movie
 $heroMovie = !empty($featuredMovies) ? $featuredMovies[0] : (!empty($recentMovies) ? $recentMovies[0] : null);
 
-// Check if ads should be displayed
 $showAds = shouldShowAds();
 ?>
 <!DOCTYPE html>
@@ -64,12 +70,14 @@ $showAds = shouldShowAds();
 
     <!-- Navbar -->
     <nav class="navbar">
-        <div style="display: flex; align-items: center;">
-            <a href="/" class="logo">
-                <i class="fas fa-film"></i> MOVIES
-            </a>
+        <div style="display:flex;align-items:center;">
+            <a href="/" class="logo"><i class="fas fa-film"></i> MOVIES</a>
+            <!-- Hamburger -->
+            <button class="nav-toggle" id="navToggle" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
             
-            <div class="nav-links">
+            <div class="nav-links" id="navLinks">
                 <a href="/" class="active no-ad-protection">Home</a>
                 <a href="/browse.php?filter=featured" class="no-ad-protection">Featured</a>
                 <a href="/browse.php?filter=latest" class="no-ad-protection">Latest</a>
@@ -257,6 +265,43 @@ $showAds = shouldShowAds();
             <p class="text-center" style="color: #B3B3B3; padding: 40px;">
                 No movies available yet. Check back soon!
             </p>
+        <?php endif; ?>
+
+        <!-- Pagination -->
+        <?php if ($totalPages > 1): ?>
+        <div class="pagination">
+            <?php if ($page > 1): ?>
+                <a href="?page=<?php echo $page - 1; ?>" class="page-btn">
+                    <i class="fas fa-chevron-left"></i> Prev
+                </a>
+            <?php endif; ?>
+
+            <?php
+            $start = max(1, $page - 2);
+            $end   = min($totalPages, $page + 2);
+            if ($start > 1): ?>
+                <a href="?page=1" class="page-btn">1</a>
+                <?php if ($start > 2): ?><span class="page-btn" style="cursor:default;">…</span><?php endif; ?>
+            <?php endif; ?>
+
+            <?php for ($i = $start; $i <= $end; $i++): ?>
+                <a href="?page=<?php echo $i; ?>"
+                   class="page-btn <?php echo $i == $page ? 'active' : ''; ?>">
+                    <?php echo $i; ?>
+                </a>
+            <?php endfor; ?>
+
+            <?php if ($end < $totalPages): ?>
+                <?php if ($end < $totalPages - 1): ?><span class="page-btn" style="cursor:default;">…</span><?php endif; ?>
+                <a href="?page=<?php echo $totalPages; ?>" class="page-btn"><?php echo $totalPages; ?></a>
+            <?php endif; ?>
+
+            <?php if ($page < $totalPages): ?>
+                <a href="?page=<?php echo $page + 1; ?>" class="page-btn">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+            <?php endif; ?>
+        </div>
         <?php endif; ?>
     </section>
         </div>

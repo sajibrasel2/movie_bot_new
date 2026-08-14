@@ -108,7 +108,7 @@ function incrementViewCount($movieId) {
     $stmt->execute(['id' => $movieId]);
 }
 
-function getRecentMovies($limit = 12) {
+function getRecentMovies($limit = 12, $offset = 0) {
     $conn = getDBConnection();
     // Group by base_movie_title so same movie with multiple qualities shows only once
     $stmt = $conn->prepare("
@@ -118,11 +118,23 @@ function getRecentMovies($limit = 12) {
         WHERE poster_url IS NOT NULL
         GROUP BY base_movie_title
         ORDER BY MAX(created_at) DESC 
-        LIMIT :limit
+        LIMIT :limit OFFSET :offset
     ");
     $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
     $stmt->execute();
     return $stmt->fetchAll();
+}
+
+function getTotalMovieCount() {
+    $conn = getDBConnection();
+    $stmt = $conn->query("
+        SELECT COUNT(DISTINCT base_movie_title) as total
+        FROM mlsbd_movies
+        WHERE poster_url IS NOT NULL
+    ");
+    $row = $stmt->fetch();
+    return $row ? (int)$row['total'] : 0;
 }
 
 function getFeaturedMovies($limit = 6) {
