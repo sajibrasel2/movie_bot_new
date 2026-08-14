@@ -91,7 +91,7 @@ function getMovieBySlug($slug) {
     $conn = getDBConnection();
     $stmt = $conn->prepare("
         SELECT * FROM mlsbd_movies 
-        WHERE slug = :slug AND status = 'completed'
+        WHERE slug = :slug 
         LIMIT 1
     ");
     $stmt->execute(['slug' => $slug]);
@@ -114,7 +114,7 @@ function getRecentMovies($limit = 12) {
         SELECT id, movie_title, slug, poster_url, quality, movie_size_readable, 
                created_at, view_count, year, available_qualities
         FROM mlsbd_movies 
-        WHERE status = 'completed' AND poster_url IS NOT NULL
+        WHERE poster_url IS NOT NULL
         ORDER BY created_at DESC 
         LIMIT :limit
     ");
@@ -129,7 +129,7 @@ function getFeaturedMovies($limit = 6) {
         SELECT id, movie_title, slug, poster_url, quality, movie_size_readable, 
                created_at, view_count, year, available_qualities
         FROM mlsbd_movies 
-        WHERE status = 'completed' AND poster_url IS NOT NULL AND is_featured = 1
+        WHERE poster_url IS NOT NULL AND is_featured = 1
         ORDER BY created_at DESC 
         LIMIT :limit
     ");
@@ -144,8 +144,7 @@ function searchMovies($query, $limit = 20) {
         SELECT id, movie_title, slug, poster_url, quality, movie_size_readable, 
                created_at, view_count, year
         FROM mlsbd_movies 
-        WHERE status = 'completed' 
-        AND poster_url IS NOT NULL
+        WHERE poster_url IS NOT NULL
         AND (movie_title LIKE :query OR slug LIKE :query)
         ORDER BY created_at DESC 
         LIMIT :limit
@@ -192,7 +191,7 @@ function getMoviesByCategory($categorySlug, $limit = 24, $offset = 0) {
         INNER JOIN movie_category_links mcl ON m.id = mcl.movie_id
         INNER JOIN movie_categories c ON mcl.category_id = c.id
         WHERE c.category_slug = :slug 
-        AND m.status = 'completed' 
+         
         AND m.poster_url IS NOT NULL
         ORDER BY m.created_at DESC 
         LIMIT :limit OFFSET :offset
@@ -212,10 +211,12 @@ function getMovieCategoryCount($categorySlug) {
         INNER JOIN movie_category_links mcl ON m.id = mcl.movie_id
         INNER JOIN movie_categories c ON mcl.category_id = c.id
         WHERE c.category_slug = :slug 
-        AND m.status = 'completed' 
+         
         AND m.poster_url IS NOT NULL
     ");
     $stmt->execute(['slug' => $categorySlug]);
     $result = $stmt->fetch();
     return $result ? $result['total'] : 0;
 }
+
+
