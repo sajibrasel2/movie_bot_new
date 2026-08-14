@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * Ad Redirect Handler
  * Handles click tracking and redirects to ad or target

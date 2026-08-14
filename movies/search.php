@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 require_once 'config.php';
 
 // Get search query
@@ -18,10 +18,10 @@ if (!empty($query)) {
     <meta name="description" content="Search results for <?php echo htmlspecialchars($query); ?>">
     
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="/movie_bot_new/movies/assets/images/favicon.png">
+    <link rel="icon" type="image/png" href="/assets/images/favicon.png">
     
     <!-- CSS -->
-    <link rel="stylesheet" href="/movie_bot_new/movies/assets/css/style.css">
+    <link rel="stylesheet" href="/assets/css/style.css">
     
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -111,6 +111,6 @@ if (!empty($query)) {
     </footer>
 
     <!-- JavaScript -->
-    <script src="/movie_bot_new/movies/assets/js/main.js"></script>
+    <script src="/assets/js/main.js"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 require_once 'config.php';
 require_once 'ads_helper.php';
 
@@ -71,8 +71,8 @@ $showAds = shouldShowAds();
             
             <div class="nav-links">
                 <a href="/" class="active no-ad-protection">Home</a>
-                <a href="/movie_bot_new/movies/browse.php?filter=featured" class="no-ad-protection">Featured</a>
-                <a href="/movie_bot_new/movies/browse.php?filter=latest" class="no-ad-protection">Latest</a>
+                <a href="/browse.php?filter=featured" class="no-ad-protection">Featured</a>
+                <a href="/browse.php?filter=latest" class="no-ad-protection">Latest</a>
                 
                 <!-- Categories Dropdown -->
                 <div class="nav-dropdown">
@@ -85,7 +85,7 @@ $showAds = shouldShowAds();
                         foreach ($navCategories as $cat): 
                             if ($cat['movie_count'] > 0):
                         ?>
-                            <a href="/movie_bot_new/movies/category.php?slug=<?php echo urlencode($cat['category_slug']); ?>">
+                            <a href="/category.php?slug=<?php echo urlencode($cat['category_slug']); ?>">
                                 <i class="fas <?php echo htmlspecialchars($cat['icon']); ?>"></i>
                                 <?php echo htmlspecialchars($cat['category_name']); ?>
                                 <span class="count">(<?php echo $cat['movie_count']; ?>)</span>
@@ -97,8 +97,8 @@ $showAds = shouldShowAds();
                     </div>
                 </div>
                 
-                <a href="/movie_bot_new/movies/browse.php?quality=1080p">HD Movies</a>
-                <a href="/movie_bot_new/movies/browse.php?year=2026">2026 Movies</a>
+                <a href="/browse.php?quality=1080p">HD Movies</a>
+                <a href="/browse.php?year=2026">2026 Movies</a>
             </div>
         </div>
         
@@ -134,10 +134,10 @@ $showAds = shouldShowAds();
             </div>
             
             <div class="buttons">
-                <a href="/movie_bot_new/movies/movie.php?slug=<?php echo htmlspecialchars($heroMovie['slug']); ?>" class="btn btn-primary">
+                <a href="/movie.php?slug=<?php echo htmlspecialchars($heroMovie['slug']); ?>" class="btn btn-primary">
                     <i class="fas fa-play"></i> Watch Now
                 </a>
-                <a href="/movie_bot_new/movies/movie.php?slug=<?php echo htmlspecialchars($heroMovie['slug']); ?>#download" class="btn btn-secondary">
+                <a href="/movie.php?slug=<?php echo htmlspecialchars($heroMovie['slug']); ?>#download" class="btn btn-secondary">
                     <i class="fas fa-download"></i> Download
                 </a>
             </div>
@@ -272,7 +272,7 @@ $showAds = shouldShowAds();
                 <div class="sidebar-categories">
                     <?php foreach ($categories as $category): ?>
                         <?php if ($category['movie_count'] > 0): ?>
-                            <a href="/movie_bot_new/movies/category.php?slug=<?php echo urlencode($category['category_slug']); ?>" 
+                            <a href="/category.php?slug=<?php echo urlencode($category['category_slug']); ?>" 
                                class="sidebar-category-item">
                                 <i class="fas <?php echo htmlspecialchars($category['icon']); ?>"></i>
                                 <span class="cat-name"><?php echo htmlspecialchars($category['category_name']); ?></span>
@@ -301,29 +301,29 @@ $showAds = shouldShowAds();
                 <h3>Quick Links</h3>
                 <ul>
                     <li><a href="/"><i class="fas fa-home"></i> Home</a></li>
-                    <li><a href="/movie_bot_new/movies/browse.php?filter=featured"><i class="fas fa-star"></i> Featured Movies</a></li>
-                    <li><a href="/movie_bot_new/movies/browse.php?filter=latest"><i class="fas fa-clock"></i> Latest Movies</a></li>
-                    <li><a href="/movie_bot_new/movies/browse.php?quality=1080p"><i class="fas fa-hd-video"></i> HD Movies</a></li>
+                    <li><a href="/browse.php?filter=featured"><i class="fas fa-star"></i> Featured Movies</a></li>
+                    <li><a href="/browse.php?filter=latest"><i class="fas fa-clock"></i> Latest Movies</a></li>
+                    <li><a href="/browse.php?quality=1080p"><i class="fas fa-hd-video"></i> HD Movies</a></li>
                 </ul>
             </div>
             
             <div class="footer-section">
                 <h3>Categories</h3>
                 <ul>
-                    <li><a href="/movie_bot_new/movies/category.php?slug=bengali-movies"><i class="fas fa-language"></i> Bengali Movies</a></li>
-                    <li><a href="/movie_bot_new/movies/category.php?slug=hindi-movies"><i class="fas fa-film"></i> Hindi Movies</a></li>
-                    <li><a href="/movie_bot_new/movies/category.php?slug=english-movies"><i class="fas fa-video"></i> English Movies</a></li>
-                    <li><a href="/movie_bot_new/movies/category.php?slug=web-series"><i class="fas fa-tv"></i> Web Series</a></li>
+                    <li><a href="/category.php?slug=bengali-movies"><i class="fas fa-language"></i> Bengali Movies</a></li>
+                    <li><a href="/category.php?slug=hindi-movies"><i class="fas fa-film"></i> Hindi Movies</a></li>
+                    <li><a href="/category.php?slug=english-movies"><i class="fas fa-video"></i> English Movies</a></li>
+                    <li><a href="/category.php?slug=web-series"><i class="fas fa-tv"></i> Web Series</a></li>
                 </ul>
             </div>
             
             <div class="footer-section">
                 <h3>Download Quality</h3>
                 <ul>
-                    <li><a href="/movie_bot_new/movies/category.php?slug=480p"><i class="fas fa-check-circle"></i> 480p Movies</a></li>
-                    <li><a href="/movie_bot_new/movies/category.php?slug=720p-hd"><i class="fas fa-check-circle"></i> 720p HD Movies</a></li>
-                    <li><a href="/movie_bot_new/movies/category.php?slug=1080p-full-hd"><i class="fas fa-check-circle"></i> 1080p Full HD</a></li>
-                    <li><a href="/movie_bot_new/movies/category.php?slug=4k-ultra-hd"><i class="fas fa-check-circle"></i> 4K Ultra HD</a></li>
+                    <li><a href="/category.php?slug=480p"><i class="fas fa-check-circle"></i> 480p Movies</a></li>
+                    <li><a href="/category.php?slug=720p-hd"><i class="fas fa-check-circle"></i> 720p HD Movies</a></li>
+                    <li><a href="/category.php?slug=1080p-full-hd"><i class="fas fa-check-circle"></i> 1080p Full HD</a></li>
+                    <li><a href="/category.php?slug=4k-ultra-hd"><i class="fas fa-check-circle"></i> 4K Ultra HD</a></li>
                 </ul>
             </div>
         </div>
@@ -352,11 +352,11 @@ $showAds = shouldShowAds();
     </footer>
 
     <!-- JavaScript -->
-    <script src="/movie_bot_new/movies/assets/js/main.js"></script>
+    <script src="/assets/js/main.js"></script>
     
     <!-- Load ad links for click protection -->
     <script>
-    fetch('/movie_bot_new/movies/get_ad_links.php')
+    fetch('/get_ad_links.php')
         .then(response => response.json())
         .then(adLinks => {
             window.DIRECT_AD_LINKS = adLinks;
@@ -368,7 +368,7 @@ $showAds = shouldShowAds();
     </script>
     
     <!-- Click Protection System -->
-    <script src="/movie_bot_new/movies/assets/js/click-protection.js"></script>
+    <script src="/assets/js/click-protection.js"></script>
     
     <?php if ($showAds): ?>
     <!-- Social Bar / Footer Ads -->

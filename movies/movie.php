@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 require_once 'config.php';
 require_once 'ads_helper.php';
 require_once 'direct_link_helper.php';
@@ -72,7 +72,7 @@ $showAds = shouldShowAds();
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
     
     <!-- CSS -->
-    <link rel="stylesheet" href="/movie_bot_new/movies/assets/css/style.css">
+    <link rel="stylesheet" href="/assets/css/style.css">
     
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -88,8 +88,8 @@ $showAds = shouldShowAds();
             
             <div class="nav-links">
                 <a href="/">Home</a>
-                <a href="/movie_bot_new/movies/browse.php?filter=featured">Featured</a>
-                <a href="/movie_bot_new/movies/browse.php?filter=latest">Latest</a>
+                <a href="/browse.php?filter=featured">Featured</a>
+                <a href="/browse.php?filter=latest">Latest</a>
                 
                 <!-- Categories Dropdown -->
                 <div class="nav-dropdown">
@@ -102,7 +102,7 @@ $showAds = shouldShowAds();
                         foreach ($navCategories as $cat): 
                             if ($cat['movie_count'] > 0):
                         ?>
-                            <a href="/movie_bot_new/movies/category.php?slug=<?php echo urlencode($cat['category_slug']); ?>">
+                            <a href="/category.php?slug=<?php echo urlencode($cat['category_slug']); ?>">
                                 <i class="fas <?php echo htmlspecialchars($cat['icon']); ?>"></i>
                                 <?php echo htmlspecialchars($cat['category_name']); ?>
                                 <span class="count">(<?php echo $cat['movie_count']; ?>)</span>
@@ -114,8 +114,8 @@ $showAds = shouldShowAds();
                     </div>
                 </div>
                 
-                <a href="/movie_bot_new/movies/browse.php?quality=1080p">HD Movies</a>
-                <a href="/movie_bot_new/movies/browse.php?year=2026">2026 Movies</a>
+                <a href="/browse.php?quality=1080p">HD Movies</a>
+                <a href="/browse.php?year=2026">2026 Movies</a>
             </div>
         </div>
         
@@ -354,29 +354,29 @@ $showAds = shouldShowAds();
                 <h3>Quick Links</h3>
                 <ul>
                     <li><a href="/"><i class="fas fa-home"></i> Home</a></li>
-                    <li><a href="/movie_bot_new/movies/browse.php?filter=featured"><i class="fas fa-star"></i> Featured Movies</a></li>
-                    <li><a href="/movie_bot_new/movies/browse.php?filter=latest"><i class="fas fa-clock"></i> Latest Movies</a></li>
-                    <li><a href="/movie_bot_new/movies/browse.php?quality=1080p"><i class="fas fa-hd-video"></i> HD Movies</a></li>
+                    <li><a href="/browse.php?filter=featured"><i class="fas fa-star"></i> Featured Movies</a></li>
+                    <li><a href="/browse.php?filter=latest"><i class="fas fa-clock"></i> Latest Movies</a></li>
+                    <li><a href="/browse.php?quality=1080p"><i class="fas fa-hd-video"></i> HD Movies</a></li>
                 </ul>
             </div>
             
             <div class="footer-section">
                 <h3>Categories</h3>
                 <ul>
-                    <li><a href="/movie_bot_new/movies/category.php?slug=bengali-movies"><i class="fas fa-language"></i> Bengali Movies</a></li>
-                    <li><a href="/movie_bot_new/movies/category.php?slug=hindi-movies"><i class="fas fa-film"></i> Hindi Movies</a></li>
-                    <li><a href="/movie_bot_new/movies/category.php?slug=english-movies"><i class="fas fa-video"></i> English Movies</a></li>
-                    <li><a href="/movie_bot_new/movies/category.php?slug=web-series"><i class="fas fa-tv"></i> Web Series</a></li>
+                    <li><a href="/category.php?slug=bengali-movies"><i class="fas fa-language"></i> Bengali Movies</a></li>
+                    <li><a href="/category.php?slug=hindi-movies"><i class="fas fa-film"></i> Hindi Movies</a></li>
+                    <li><a href="/category.php?slug=english-movies"><i class="fas fa-video"></i> English Movies</a></li>
+                    <li><a href="/category.php?slug=web-series"><i class="fas fa-tv"></i> Web Series</a></li>
                 </ul>
             </div>
             
             <div class="footer-section">
                 <h3>Download Quality</h3>
                 <ul>
-                    <li><a href="/movie_bot_new/movies/category.php?slug=480p"><i class="fas fa-check-circle"></i> 480p Movies</a></li>
-                    <li><a href="/movie_bot_new/movies/category.php?slug=720p-hd"><i class="fas fa-check-circle"></i> 720p HD Movies</a></li>
-                    <li><a href="/movie_bot_new/movies/category.php?slug=1080p-full-hd"><i class="fas fa-check-circle"></i> 1080p Full HD</a></li>
-                    <li><a href="/movie_bot_new/movies/category.php?slug=4k-ultra-hd"><i class="fas fa-check-circle"></i> 4K Ultra HD</a></li>
+                    <li><a href="/category.php?slug=480p"><i class="fas fa-check-circle"></i> 480p Movies</a></li>
+                    <li><a href="/category.php?slug=720p-hd"><i class="fas fa-check-circle"></i> 720p HD Movies</a></li>
+                    <li><a href="/category.php?slug=1080p-full-hd"><i class="fas fa-check-circle"></i> 1080p Full HD</a></li>
+                    <li><a href="/category.php?slug=4k-ultra-hd"><i class="fas fa-check-circle"></i> 4K Ultra HD</a></li>
                 </ul>
             </div>
         </div>
@@ -405,11 +405,11 @@ $showAds = shouldShowAds();
     </footer>
 
     <!-- JavaScript -->
-    <script src="/movie_bot_new/movies/assets/js/main.js"></script>
+    <script src="/assets/js/main.js"></script>
     
     <!-- Load ad links for click protection -->
     <script>
-    fetch('/movie_bot_new/movies/get_ad_links.php')
+    fetch('/get_ad_links.php')
         .then(response => response.json())
         .then(adLinks => {
             window.DIRECT_AD_LINKS = adLinks;
@@ -421,6 +421,6 @@ $showAds = shouldShowAds();
     </script>
     
     <!-- Click Protection System -->
-    <script src="/movie_bot_new/movies/assets/js/click-protection.js"></script>
+    <script src="/assets/js/click-protection.js"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * Ads Helper Functions
  * Display ads from dashboard configuration

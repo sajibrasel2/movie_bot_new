@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * Direct Link Ads Helper
  * Handles redirect ads on clickable buttons
@@ -108,7 +108,7 @@ function wrapWithAdRedirect($targetUrl, $context = 'download') {
     }
     
     // Return redirect URL with target encoded
-    return '/movie_bot_new/movies/ad_redirect.php?ad=' . $ad['id'] . '&target=' . urlencode($targetUrl) . '&ctx=' . urlencode($context);
+    return '/ad_redirect.php?ad=' . $ad['id'] . '&target=' . urlencode($targetUrl) . '&ctx=' . urlencode($context);
 }
 
 /**
@@ -123,7 +123,7 @@ function getDirectAdLink() {
         return null;
     }
     
-    return '/movie_bot_new/movies/ad_redirect.php?ad=' . $ad['id'] . '&direct=1';
+    return '/ad_redirect.php?ad=' . $ad['id'] . '&direct=1';
 }
 
 /**
