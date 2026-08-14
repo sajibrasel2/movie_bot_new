@@ -29,36 +29,100 @@ function initNavbar() {
 function initSearch() {
     const searchForm = document.getElementById('searchForm');
     const searchInput = document.getElementById('searchInput');
-    
+
     if (!searchForm || !searchInput) return;
-    
+
+    // Create dropdown container
+    const dropdown = document.createElement('div');
+    dropdown.id = 'searchDropdown';
+    dropdown.style.cssText = `
+        position: absolute; top: 100%; left: 0; right: 0;
+        background: #1a1a1a; border: 1px solid #333; border-top: none;
+        border-radius: 0 0 8px 8px; z-index: 9999;
+        max-height: 420px; overflow-y: auto; display: none;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+    `;
+    searchForm.style.position = 'relative';
+    searchForm.appendChild(dropdown);
+
+    // Prevent form submit navigating away
     searchForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        const query = searchInput.value.trim();
-        
-        if (query.length > 0) {
-            window.location.href = `/search.php?q=${encodeURIComponent(query)}`;
-        }
+        const q = searchInput.value.trim();
+        if (q.length > 1) fetchResults(q);
     });
-    
-    // Live search suggestions (optional)
-    let searchTimeout;
-    searchInput.addEventListener('input', function() {
-        clearTimeout(searchTimeout);
-        const query = this.value.trim();
-        
-        if (query.length > 2) {
-            searchTimeout = setTimeout(() => {
-                fetchSearchSuggestions(query);
-            }, 300);
-        }
-    });
-}
 
-// Fetch search suggestions
-function fetchSearchSuggestions(query) {
-    // This can be implemented later for autocomplete
-    console.log('Search suggestions for:', query);
+    let debounceTimer;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        const q = this.value.trim();
+        if (q.length < 2) { hideDropdown(); return; }
+        debounceTimer = setTimeout(() => fetchResults(q), 280);
+    });
+
+    // Hide on click outside
+    document.addEventListener('click', function(e) {
+        if (!searchForm.contains(e.target)) hideDropdown();
+    });
+
+    function fetchResults(q) {
+        fetch('/api/search.php?q=' + encodeURIComponent(q))
+            .then(r => r.json())
+            .then(results => renderDropdown(results, q))
+            .catch(() => hideDropdown());
+    }
+
+    function renderDropdown(results, q) {
+        if (!results || results.length === 0) {
+            dropdown.innerHTML = `
+                <div style="padding:16px;text-align:center;color:#888;font-size:0.9rem;">
+                    No results for "<strong style="color:#fff">${escHtml(q)}</strong>"
+                </div>`;
+            showDropdown();
+            return;
+        }
+
+        dropdown.innerHTML = results.map(m => {
+            const qualities = (m.qualities || []).map(q =>
+                `<span style="background:#E50914;color:#fff;font-size:0.65rem;font-weight:700;
+                              padding:1px 6px;border-radius:3px;margin-left:4px;">${escHtml(q)}</span>`
+            ).join('');
+
+            const poster = m.poster_url
+                ? `<img src="${escHtml(m.poster_url)}" style="width:36px;height:50px;object-fit:cover;border-radius:3px;flex-shrink:0;">`
+                : `<div style="width:36px;height:50px;background:#333;border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.2rem;">🎬</div>`;
+
+            return `
+            <div onclick="window.location.href='/movie.php?slug=${escHtml(m.slug)}'"
+                 style="display:flex;align-items:center;gap:12px;padding:10px 14px;
+                        cursor:pointer;border-bottom:1px solid #2a2a2a;transition:background 0.15s;"
+                 onmouseover="this.style.background='rgba(229,9,20,0.12)'"
+                 onmouseout="this.style.background='transparent'">
+                ${poster}
+                <div style="flex:1;min-width:0;">
+                    <div style="font-size:0.9rem;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                        ${escHtml(m.movie_title)}
+                    </div>
+                    <div style="margin-top:3px;display:flex;align-items:center;flex-wrap:wrap;gap:4px;">
+                        ${m.year ? `<span style="font-size:0.75rem;color:#888;">${m.year}</span>` : ''}
+                        ${qualities}
+                    </div>
+                </div>
+                <i class="fas fa-chevron-right" style="color:#555;font-size:0.8rem;flex-shrink:0;"></i>
+            </div>`;
+        }).join('');
+
+        showDropdown();
+    }
+
+    function showDropdown() { dropdown.style.display = 'block'; }
+    function hideDropdown() { dropdown.style.display = 'none'; }
+
+    function escHtml(str) {
+        return String(str || '')
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
 }
 
 // Movie card interactions
