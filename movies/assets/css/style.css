@@ -1615,3 +1615,16 @@ body {
 @media (max-width: 480px) {
     .page-btn { padding: 7px 11px; font-size: 0.8rem; }
 }
+
+/* ── Hide sidebar (categories) on mobile ── */
+@media (max-width: 768px) {
+    .sidebar {
+        display: none !important;
+    }
+    .main-wrapper {
+        flex-direction: column;
+    }
+    .content-area {
+        width: 100% !important;
+    }
+}
