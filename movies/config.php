@@ -110,12 +110,14 @@ function incrementViewCount($movieId) {
 
 function getRecentMovies($limit = 12) {
     $conn = getDBConnection();
+    // Group by base_movie_title so same movie with multiple qualities shows only once
     $stmt = $conn->prepare("
         SELECT id, movie_title, slug, poster_url, quality, movie_size_readable, 
                created_at, view_count, year, available_qualities
         FROM mlsbd_movies 
         WHERE poster_url IS NOT NULL
-        ORDER BY created_at DESC 
+        GROUP BY base_movie_title
+        ORDER BY MAX(created_at) DESC 
         LIMIT :limit
     ");
     $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
@@ -130,7 +132,8 @@ function getFeaturedMovies($limit = 6) {
                created_at, view_count, year, available_qualities
         FROM mlsbd_movies 
         WHERE poster_url IS NOT NULL AND is_featured = 1
-        ORDER BY created_at DESC 
+        GROUP BY base_movie_title
+        ORDER BY MAX(created_at) DESC 
         LIMIT :limit
     ");
     $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
@@ -145,8 +148,9 @@ function searchMovies($query, $limit = 20) {
                created_at, view_count, year
         FROM mlsbd_movies 
         WHERE poster_url IS NOT NULL
-        AND (movie_title LIKE :query OR slug LIKE :query)
-        ORDER BY created_at DESC 
+        AND (movie_title LIKE :query OR slug LIKE :query OR base_movie_title LIKE :query)
+        GROUP BY base_movie_title
+        ORDER BY MAX(created_at) DESC 
         LIMIT :limit
     ");
     $searchTerm = '%' . $query . '%';
