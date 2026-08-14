@@ -233,22 +233,32 @@ $showAds = shouldShowAds();
                     <!-- Quality Selector Tabs -->
                     <div class="quality-tabs">
                         <?php 
-                        $qualityOrder = ['4K', '1080p', '720p', '480p'];
+                        $qualityOrder = ['4K Ultra HD', '1080p Full HD', '720p HD', '480p'];
                         $sortedQualities = [];
                         foreach ($qualityOrder as $q) {
                             if (isset($qualityVariants[$q])) {
                                 $sortedQualities[] = $q;
                             }
                         }
+                        // Fallback: add any quality not in standard order
+                        foreach ($qualityVariants as $q => $data) {
+                            if (!in_array($q, $sortedQualities)) {
+                                $sortedQualities[] = $q;
+                            }
+                        }
                         
                         foreach ($sortedQualities as $index => $quality): 
                             $isActive = $index === 0 ? 'active' : '';
+                            $qData = $qualityVariants[$quality];
+                            $qSize = $qData['size'] ?? ($qData['movie_size_readable'] ?? '');
                         ?>
                             <button class="quality-tab <?php echo $isActive; ?>" 
                                     data-quality="<?php echo htmlspecialchars($quality); ?>">
                                 <i class="fas fa-hd-video"></i>
                                 <?php echo htmlspecialchars($quality); ?>
-                                <span class="size"><?php echo htmlspecialchars($qualityVariants[$quality]['size'] ?? ''); ?></span>
+                                <?php if ($qSize): ?>
+                                    <span class="size"><?php echo htmlspecialchars($qSize); ?></span>
+                                <?php endif; ?>
                             </button>
                         <?php endforeach; ?>
                     </div>
