@@ -65,16 +65,40 @@ CREATE TABLE IF NOT EXISTS movie_ads_settings (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 6. Add columns to mlsbd_movies (safe way - ignore error if exists)
-ALTER TABLE mlsbd_movies ADD COLUMN detected_categories TEXT;
-ALTER TABLE mlsbd_movies ADD COLUMN language VARCHAR(50);
-ALTER TABLE mlsbd_movies ADD COLUMN genre VARCHAR(100);
-ALTER TABLE mlsbd_movies ADD COLUMN available_qualities TEXT;
-ALTER TABLE mlsbd_movies ADD COLUMN base_movie_title VARCHAR(500);
-ALTER TABLE mlsbd_movies ADD COLUMN quality_variants TEXT;
-ALTER TABLE mlsbd_movies ADD COLUMN movie_slug VARCHAR(300);
-ALTER TABLE mlsbd_movies ADD COLUMN poster_url TEXT;
-ALTER TABLE mlsbd_movies ADD COLUMN website_posted TINYINT(1) DEFAULT 0;
+-- 6. Add columns to mlsbd_movies (using stored procedure to skip if exists)
+DROP PROCEDURE IF EXISTS add_column_if_not_exists;
+DELIMITER //
+CREATE PROCEDURE add_column_if_not_exists(
+    IN tbl VARCHAR(100),
+    IN col VARCHAR(100),
+    IN col_def VARCHAR(200)
+)
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = tbl
+        AND COLUMN_NAME = col
+    ) THEN
+        SET @sql = CONCAT('ALTER TABLE `', tbl, '` ADD COLUMN `', col, '` ', col_def);
+        PREPARE stmt FROM @sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+    END IF;
+END //
+DELIMITER ;
+
+CALL add_column_if_not_exists('mlsbd_movies', 'detected_categories', 'TEXT');
+CALL add_column_if_not_exists('mlsbd_movies', 'language', 'VARCHAR(50)');
+CALL add_column_if_not_exists('mlsbd_movies', 'genre', 'VARCHAR(100)');
+CALL add_column_if_not_exists('mlsbd_movies', 'available_qualities', 'TEXT');
+CALL add_column_if_not_exists('mlsbd_movies', 'base_movie_title', 'VARCHAR(500)');
+CALL add_column_if_not_exists('mlsbd_movies', 'quality_variants', 'TEXT');
+CALL add_column_if_not_exists('mlsbd_movies', 'movie_slug', 'VARCHAR(300)');
+CALL add_column_if_not_exists('mlsbd_movies', 'poster_url', 'TEXT');
+CALL add_column_if_not_exists('mlsbd_movies', 'website_posted', 'TINYINT(1) DEFAULT 0');
+
+DROP PROCEDURE IF EXISTS add_column_if_not_exists;
 
 -- 7. Insert default categories
 INSERT IGNORE INTO movie_categories (category_name, category_slug, description, icon, display_order) VALUES
