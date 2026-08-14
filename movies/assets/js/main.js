@@ -69,8 +69,7 @@ function initMovieCards() {
         card.addEventListener('click', function() {
             const slug = this.dataset.slug;
             if (slug) {
-                // Use movie.php?slug= for compatibility
-                window.location.href = '/movie_bot_new/movies/movie.php?slug=' + slug;
+                window.location.href = '/movie.php?slug=' + slug;
             }
         });
     });

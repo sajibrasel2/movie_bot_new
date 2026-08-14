@@ -31,7 +31,7 @@
     // Track ad click
     function trackAdClick(adId) {
         // Send tracking request
-        fetch('/movie_bot_new/movies/track_ad_click.php', {
+        fetch('/track_ad_click.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -167,17 +167,8 @@
             });
         }
         
-        // Protect movie cards
-        document.querySelectorAll('.movie-card').forEach(card => {
-            card.addEventListener('click', function(e) {
-                // Don't interfere with child element clicks
-                if (e.target !== this && !e.target.closest('.movie-card-poster')) {
-                    return;
-                }
-                
-                return handleProtectedClick(this, e);
-            });
-        });
+        // Protect movie cards - REMOVED: movie cards go directly to movie page
+        // Ad protection only applies to download buttons, not movie cards
     }
     
     // Initialize when DOM is ready
