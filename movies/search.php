@@ -57,24 +57,30 @@ if (!empty($query)) {
         </h2>
         
         <?php if (!empty($searchResults)): ?>
-            <div class="movie-grid">
+            <div class="movie-list">
                 <?php foreach ($searchResults as $movie): ?>
-                    <div class="movie-card" data-slug="<?php echo htmlspecialchars($movie['slug']); ?>">
-                        <img src="<?php echo htmlspecialchars($movie['poster_url']); ?>" 
-                             alt="<?php echo htmlspecialchars($movie['movie_title']); ?>"
-                             loading="lazy">
-                        
-                        <div class="overlay">
-                            <div class="title"><?php echo htmlspecialchars($movie['movie_title']); ?></div>
-                            <div class="meta">
-                                <?php if ($movie['quality']): ?>
-                                    <span class="quality-badge"><?php echo htmlspecialchars($movie['quality']); ?></span>
+                    <div class="movie-list-item" data-slug="<?php echo htmlspecialchars($movie['slug']); ?>" onclick="window.location.href='/movie.php?slug=<?php echo htmlspecialchars($movie['slug']); ?>'">
+                        <div class="movie-list-poster">
+                            <img src="<?php echo htmlspecialchars($movie['poster_url']); ?>" 
+                                 alt="<?php echo htmlspecialchars($movie['movie_title']); ?>"
+                                 loading="lazy">
+                        </div>
+                        <div class="movie-list-info">
+                            <h3><?php echo htmlspecialchars($movie['movie_title']); ?></h3>
+                            <div class="movie-list-meta">
+                                <?php if ($movie['year']): ?>
+                                    <span><i class="fas fa-calendar"></i> <?php echo $movie['year']; ?></span>
                                 <?php endif; ?>
-                                
                                 <?php if ($movie['movie_size_readable']): ?>
-                                    <span><?php echo htmlspecialchars($movie['movie_size_readable']); ?></span>
+                                    <span><i class="fas fa-hdd"></i> <?php echo $movie['movie_size_readable']; ?></span>
+                                <?php endif; ?>
+                                <?php if ($movie['quality']): ?>
+                                    <span class="quality-badge-sm"><?php echo htmlspecialchars($movie['quality']); ?></span>
                                 <?php endif; ?>
                             </div>
+                        </div>
+                        <div class="movie-list-arrow">
+                            <i class="fas fa-chevron-right"></i>
                         </div>
                     </div>
                 <?php endforeach; ?>
@@ -112,5 +118,6 @@ if (!empty($query)) {
 
     <!-- JavaScript -->
     <script src="/assets/js/main.js"></script>
+    <script src="/assets/js/click-protection.js"></script>
 </body>
 </html>
