@@ -1,200 +1,104 @@
 /**
- * Universal Click Protection with Ad System
- * First click → Ad opens in new tab
- * Second click → Goes to actual link
+ * Download Button Click Protection with Ad System
+ * First click  → Ad opens in new tab, button shows "Click again to download"
+ * Second click → Goes to actual download link
+ *
+ * Config: set AD_URL below to your ad network popunder/direct link URL
  */
 
-(function() {
+(function () {
     'use strict';
-    
-    // Track clicks per element
-    const clickTracker = new WeakMap();
-    
-    // Ad links (fetched from database via PHP)
-    let adLinks = [];
-    
-    // Initialize ad links
-    function initAdLinks() {
-        // This will be populated by PHP
-        if (window.DIRECT_AD_LINKS && Array.isArray(window.DIRECT_AD_LINKS)) {
-            adLinks = window.DIRECT_AD_LINKS;
-        }
+
+    // =====================================================
+    // ▼▼▼ আপনার Ad Network URL এখানে দিন ▼▼▼
+    // =====================================================
+    var AD_URL = window.SITE_AD_URL || '';
+    // উদাহরণ: 'https://www.profitableratecpm.com/xxxxxxxx'
+    // অথবা যেকোনো PopAds / Adsterra direct link URL
+    // =====================================================
+
+    // Click state per element (WeakMap so no memory leak)
+    var clickState = new WeakMap();
+
+    // Track ad click via PHP (optional analytics)
+    function trackAdClick() {
+        try {
+            fetch('/track_ad_click.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ context: 'download_btn' })
+            });
+        } catch (e) { /* silent */ }
     }
-    
-    // Get random ad link
-    function getRandomAdLink() {
-        if (adLinks.length === 0) return null;
-        const randomIndex = Math.floor(Math.random() * adLinks.length);
-        return adLinks[randomIndex];
+
+    // Show feedback on button after first click
+    function showFeedback(btn) {
+        var original = btn.innerHTML;
+        var originalBg = btn.style.background;
+
+        btn.innerHTML = '<i class="fas fa-redo"></i> আবার ক্লিক করুন';
+        btn.style.background = '#10b981';
+        btn.style.transition = 'background 0.3s';
+
+        // Reset after 12 seconds (if user doesn't click again)
+        setTimeout(function () {
+            btn.innerHTML = original;
+            btn.style.background = originalBg;
+            clickState.set(btn, 0);
+        }, 12000);
     }
-    
-    // Track ad click
-    function trackAdClick(adId) {
-        // Send tracking request
-        fetch('/track_ad_click.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ ad_id: adId })
-        }).catch(err => console.error('Tracking failed:', err));
-    }
-    
-    // Handle click with ad protection
-    function handleProtectedClick(element, event) {
-        // Get click count for this element
-        let clickCount = clickTracker.get(element) || 0;
-        
-        if (clickCount === 0) {
-            // First click - show ad
-            event.preventDefault();
-            event.stopPropagation();
-            
-            const adLink = getRandomAdLink();
-            if (adLink) {
-                // Open ad in new tab
-                window.open(adLink.url, '_blank');
-                
-                // Track click
-                trackAdClick(adLink.id);
-                
-                // Visual feedback
-                showClickFeedback(element, 'Click again to continue');
+
+    // Handle protected click on a download button
+    function handleDownloadClick(e) {
+        var btn = e.currentTarget;
+        var count = clickState.get(btn) || 0;
+
+        if (count === 0) {
+            // ── First click ──
+            e.preventDefault();
+            e.stopImmediatePropagation();
+
+            // Open ad in new tab (if AD_URL is set)
+            if (AD_URL && AD_URL.length > 5) {
+                window.open(AD_URL, '_blank', 'noopener,noreferrer');
+                trackAdClick();
             }
-            
-            // Increment click count
-            clickTracker.set(element, 1);
-            
-            // Reset after 10 seconds
-            setTimeout(() => {
-                clickTracker.set(element, 0);
-            }, 10000);
-            
-            return false;
+
+            clickState.set(btn, 1);
+            showFeedback(btn);
+
         } else {
-            // Second click - allow normal action
-            clickTracker.set(element, 0);
-            return true;
+            // ── Second click ── allow the original href to work normally
+            clickState.set(btn, 0);
+            // do nothing → browser follows the <a href>
         }
     }
-    
-    // Show visual feedback
-    function showClickFeedback(element, message) {
-        const originalText = element.textContent || element.value;
-        const isButton = element.tagName === 'BUTTON' || element.tagName === 'INPUT';
-        const isLink = element.tagName === 'A';
-        
-        if (isButton) {
-            element.textContent = message;
-            element.style.background = '#10b981';
-            
-            setTimeout(() => {
-                element.textContent = originalText;
-                element.style.background = '';
-            }, 3000);
-        } else if (isLink) {
-            const badge = document.createElement('span');
-            badge.textContent = ' ✓ Click again';
-            badge.style.cssText = 'background: #10b981; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; margin-left: 5px;';
-            element.appendChild(badge);
-            
-            setTimeout(() => {
-                badge.remove();
-            }, 3000);
-        }
-    }
-    
-    // Apply click protection to all clickable elements
-    function applyClickProtection() {
-        // Protect all links (except navigation)
-        document.querySelectorAll('a').forEach(link => {
-            // Skip navigation links, logo, etc.
-            if (link.classList.contains('no-ad-protection') || 
-                link.closest('nav') || 
-                link.closest('.navbar') ||
-                link.closest('.footer') ||
-                link.href.includes('#')) {
-                return;
-            }
-            
-            link.addEventListener('click', function(e) {
-                return handleProtectedClick(this, e);
-            });
+
+    // Apply protection to all .download-btn elements
+    function applyProtection() {
+        document.querySelectorAll('a.download-btn').forEach(function (btn) {
+            // Avoid double-binding
+            if (btn.dataset.adProtected) return;
+            btn.dataset.adProtected = '1';
+            btn.addEventListener('click', handleDownloadClick, true);
         });
-        
-        // Protect download buttons specifically
-        document.querySelectorAll('.download-btn, .btn-primary').forEach(button => {
-            button.addEventListener('click', function(e) {
-                return handleProtectedClick(this, e);
-            });
-        });
-        
-        // Protect search form
-        const searchForm = document.getElementById('searchForm');
-        if (searchForm) {
-            searchForm.addEventListener('submit', function(e) {
-                const submitButton = this.querySelector('button[type="submit"]');
-                const clickCount = clickTracker.get(this) || 0;
-                
-                if (clickCount === 0) {
-                    e.preventDefault();
-                    
-                    const adLink = getRandomAdLink();
-                    if (adLink) {
-                        window.open(adLink.url, '_blank');
-                        trackAdClick(adLink.id);
-                        
-                        if (submitButton) {
-                            const originalHTML = submitButton.innerHTML;
-                            submitButton.innerHTML = '<i class="fas fa-check"></i> Search Again';
-                            submitButton.style.background = '#10b981';
-                            
-                            setTimeout(() => {
-                                submitButton.innerHTML = originalHTML;
-                                submitButton.style.background = '';
-                            }, 3000);
-                        }
-                    }
-                    
-                    clickTracker.set(this, 1);
-                    
-                    setTimeout(() => {
-                        clickTracker.set(this, 0);
-                    }, 10000);
-                    
-                    return false;
-                }
-            });
-        }
-        
-        // Protect movie cards - REMOVED: movie cards go directly to movie page
-        // Ad protection only applies to download buttons, not movie cards
     }
-    
-    // Initialize when DOM is ready
+
+    // Init on DOM ready
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() {
-            initAdLinks();
-            applyClickProtection();
-        });
+        document.addEventListener('DOMContentLoaded', applyProtection);
     } else {
-        initAdLinks();
-        applyClickProtection();
+        applyProtection();
     }
-    
-    // Reapply protection when new content is added (for AJAX)
-    const observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            if (mutation.addedNodes.length) {
-                applyClickProtection();
+
+    // Re-apply if new buttons are added dynamically
+    new MutationObserver(function (mutations) {
+        for (var m of mutations) {
+            if (m.addedNodes.length) {
+                applyProtection();
+                break;
             }
-        });
-    });
-    
-    // Observe document for changes
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true
-    });
-    
+        }
+    }).observe(document.body, { childList: true, subtree: true });
+
 })();

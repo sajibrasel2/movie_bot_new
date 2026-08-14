@@ -354,17 +354,9 @@ $showAds = shouldShowAds();
     <!-- JavaScript -->
     <script src="/assets/js/main.js"></script>
     
-    <!-- Load ad links for click protection -->
+    <!-- Ad URL config -->
     <script>
-    fetch('/get_ad_links.php')
-        .then(response => response.json())
-        .then(adLinks => {
-            window.DIRECT_AD_LINKS = adLinks;
-        })
-        .catch(err => {
-            console.error('Failed to load ad links:', err);
-            window.DIRECT_AD_LINKS = [];
-        });
+    window.SITE_AD_URL = '';
     </script>
     
     <!-- Click Protection System -->
