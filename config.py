@@ -14,7 +14,7 @@ TELEGRAM_BOT = {
 # =========================
 # Force Subscribe Channel
 # =========================
-FORCE_SUB_CHANNEL = "@getlatestmovienew"  # Channel username
+FORCE_SUB_CHANNEL = "@newmoviesarena4u"  # Channel username
 
 # =========================
 # Common Settings
@@ -34,7 +34,7 @@ COMMON = {
 # =========================
 AUTO_POSTER = {
     "enabled": True,
-    "channel": "@getlatestmovienew",  # Channel to post new uploads
+    "channel": "@newmoviesarena4u",  # Channel to post new uploads
     "check_interval_minutes": 30,     # How often to check for new uploads
     "max_posts_per_check": 5,         # Max new posts per check cycle
     "posted_file": "posted_urls.txt",  # File to track already-posted URLs
@@ -45,7 +45,7 @@ AUTO_POSTER = {
 # =========================
 RELEASE_TRACKER = {
     "enabled": True,
-    "channel": "@getlatestmovienew",   # Channel to post release alerts
+    "channel": "@newmoviesarena4u",   # Channel to post release alerts
     "check_interval_minutes": 60,      # How often to check for new releases
     "delay_hours_after_release": 6,    # Wait 6 hours after release before searching
     "tmdb_url": "https://www.themoviedb.org/movie/upcoming",
@@ -93,90 +93,16 @@ BITSEARCH = {
 }
 
 # =========================
-# Movie Sources — All sites searched in parallel
+# Movie Sources — Search only from our own site
 # =========================
-# type: "wp" = WordPress search (?s=), "api" = WP REST API, "custom" = site-specific
+# type: "custom" for movies.techandclick.site database search
 SITES = [
-    # --- BD FTP / Direct Download ---
     {
-        "name": "CTGMovies",
-        "emoji": "🇧🇩",
-        "type": "wp",
-        "search_url": "https://ctgmovies.com/?s={query}",
-        "base_url": "https://ctgmovies.com",
-        "verify_ssl": False,
-        "whitelist_domains": ("ftp.ctgfun.com",),
-        "aliases": ["http://ctgmovies.com"],
-    },
-    {
-        "name": "CrazyCTG",
+        "name": "TechAndClick Movies",
         "emoji": "🎬",
-        "type": "api",
-        "api_url": "http://crazyctg.com/wp-json/wp/v2/posts",
-        "base_url": "http://crazyctg.com",
-        "whitelist_domains": ("ftp.ctgfun.com",),
-        "aliases": [],
-    },
-    {
-        "name": "Elaach",
-        "emoji": "🎭",
         "type": "custom",
-        "search_url": "https://elaach.com/search?q={query}",
-        "base_url": "https://elaach.com",
+        "search_url": "https://movies.techandclick.site/api/search.php?q={query}",
+        "base_url": "https://movies.techandclick.site",
         "aliases": [],
-    },
-    # --- Bangla Series / Movies (Hoichoi, Chorki, Bongo etc.) ---
-    {
-        "name": "NotunMovie",
-        "emoji": "📺",
-        "type": "wp",
-        "search_url": "https://www.notunmovie.link/?s={query}",
-        "base_url": "https://www.notunmovie.link",
-        "aliases": ["https://notunmovie.com", "https://www.notunmovie.com"],
-    },
-    {
-        "name": "BanglaMovies",
-        "emoji": "🎞️",
-        "type": "wp",
-        "search_url": "https://banglamovies.vip/?s={query}",
-        "base_url": "https://banglamovies.vip",
-        "aliases": ["https://banglamovies.xyz", "https://banglamovies.cc"],
-    },
-    {
-        "name": "MoviedBD",
-        "emoji": "📝",
-        "type": "wp",
-        "search_url": "https://www.movied.link/?s={query}",
-        "base_url": "https://www.movied.link",
-        "aliases": ["https://movied.link", "https://www.movied.xyz"],
-    },
-    {
-        "name": "Freedrive",
-        "emoji": "💾",
-        "type": "wp",
-        "search_url": "https://freedrivemovie.sbs/?s={query}",
-        "base_url": "https://freedrivemovie.sbs",
-        "aliases": [
-            "https://freedrivemovie.cfd",
-            "https://freedrivemovie.xyz",
-            "https://freedrivemovie.store",
-            "https://freedrivemovie.com",
-        ],
-    },
-    {
-        "name": "Flixmet",
-        "emoji": "🎥",
-        "type": "wp",
-        "search_url": "https://flixmet.net/?s={query}",
-        "base_url": "https://flixmet.net",
-        "aliases": ["https://flixmet.com", "https://flixmet.xyz"],
-    },
-    {
-        "name": "Fojik",
-        "emoji": "🍿",
-        "type": "wp",
-        "search_url": "https://fojik.site/?s={query}",
-        "base_url": "https://fojik.site",
-        "aliases": ["https://fojik.com", "https://fojik.xyz"],
     },
 ]
