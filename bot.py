@@ -418,6 +418,49 @@ def _search_api(site: dict, query: str) -> List[Dict]:
     return results
 
 
+def _search_custom_json_api(site: dict, query: str) -> List[Dict]:
+    """Search a custom JSON API (like TechAndClick Movies)."""
+    encoded = urllib.parse.quote_plus(query)
+    url = site["search_url"].format(query=encoded)
+    headers = {"User-Agent": COMMON["user_agent"]}
+    
+    try:
+        resp = requests.get(url, headers=headers, timeout=COMMON["timeout"], verify=False)
+        resp.raise_for_status()
+        data = resp.json()
+        
+        if not isinstance(data, list):
+            logger.error("%s: API returned non-list response", site["name"])
+            return []
+        
+        results = []
+        for item in data[:COMMON["max_results"]]:
+            title = item.get("movie_title", "")
+            slug = item.get("slug", "")
+            if not title or not slug:
+                continue
+            
+            # Build movie page URL
+            base_url = site.get("base_url", "https://movies.techandclick.site")
+            movie_url = f"{base_url}/movie.php?slug={slug}"
+            
+            thumbnail = item.get("poster_url", "")
+            
+            results.append({
+                "source": site["name"],
+                "emoji": site["emoji"],
+                "title": title,
+                "link": movie_url,
+                "thumbnail": thumbnail,
+                "download_links": [],  # Download links are on movie page
+            })
+        
+        return results
+    except Exception as exc:
+        logger.error("%s: API error: %s", site["name"], exc)
+        return []
+
+
 def _search_custom_elaach(site: dict, query: str) -> List[Dict]:
     """Elaach uses a custom search URL and h3-based results."""
     encoded = urllib.parse.quote_plus(query)
@@ -627,7 +670,11 @@ def search_all_sites(query: str) -> List[Dict]:
         elif site_type == "api":
             return _search_api(site, q)
         elif site_type == "custom":
-            return _search_custom_elaach(site, q)
+            # Check if it's JSON API or Elaach-style HTML
+            if "search_url" in site and "api" in site.get("search_url", "").lower():
+                return _search_custom_json_api(site, q)
+            else:
+                return _search_custom_elaach(site, q)
         return []
 
     for q in queries:
