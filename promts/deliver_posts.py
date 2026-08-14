@@ -177,8 +177,14 @@ async def forward_to_all(client: TelegramClient, row: dict):
     else:
         raw_text = row.get("text") or ""
 
-    # @username রিমুভ করা হচ্ছে
-    clean_text = re.sub(r"@\w+", "", raw_text).strip()
+    # ১. টেলিগ্রাম লিংকসহ HTML অ্যাঙ্কর ট্যাগ এবং ভেতরের টেক্সট সম্পূর্ণ রিমুভ (লাইভ লিংক বাদে)
+    clean_text = re.sub(r'<a\s+href=["\'](?:https?://)?(?:t\\.me|telegram\\.me|telegram\\.dog)/(?!.*/live)[^"\']*["\']>(.*?)</a>', '', raw_text, flags=re.IGNORECASE)
+    # ২. সাধারণ র (raw) টেলিগ্রাম লিংক টেক্সট থেকে রিমুভ (লাইভ লিংক বাদে)
+    clean_text = re.sub(r'(?:https?://)?(?:t\\.me|telegram\\.me|telegram\\.dog)/(?!.*/live)[^\s<>]+', '', clean_text, flags=re.IGNORECASE)
+    # ৩. @ইউজারনেম রিমুভ করা হচ্ছে
+    clean_text = re.sub(r"@\w+", "", clean_text).strip()
+    # ৪. লিংক রিমুভ করার পর তৈরি হওয়া অতিরিক্ত ফাঁকা লাইন ক্লিন করা
+    clean_text = re.sub(r'\n\s*\n', '\n\n', clean_text)
     
     if MESSAGE_PREFIX:
         clean_text = f"{MESSAGE_PREFIX}\n\n{clean_text}".strip()

@@ -32,9 +32,9 @@ TELEGRAM_API = {
     "bot_token": "8261646421:AAEd1yR5sqdQYFjf51tVHoBdurT-z_aYCYg",
     "bot_username": "DailyAI_Prompts",
 
-    # ЁЯСЙ ржПржХрж╛ржзрж┐ржХ ржЯрж╛рж░рзНржЧрзЗржЯ (ржЧрзНрж░рзБржк + ржЪрзНржпрж╛ржирзЗрж▓)
+    # একাধিক টার্গেট (গ্রুপ + চ্যানেল)
     "target_channels": [
-        -1003564276724,  # @getlatestmovienew
+        "@latestfreeapp",  # <-- নতুন ডেলিভারি চ্যানেল
     ],
 }
 
@@ -51,7 +51,7 @@ SOURCE_CHANNELS = [
     "@AFRtechnology02",
     "-1001729314655",  # ApkCunk (Official)
     "@rirobincps",
-    "@modyolo_official",# <-- শুরুতে -100 যুক্ত করে এভাবে বসান
+    "@Getmodpcs",
 ]
 
 # lower-case + @ remove (priority logic)
