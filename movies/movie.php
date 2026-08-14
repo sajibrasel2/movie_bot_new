@@ -251,6 +251,8 @@ $showAds = shouldShowAds();
                             $isActive = $index === 0 ? 'active' : '';
                             $qData = $qualityVariants[$quality];
                             $qSize = $qData['size'] ?? ($qData['movie_size_readable'] ?? '');
+                            // Hide if empty or 'Unknown'
+                            if (strtolower($qSize) === 'unknown') $qSize = '';
                         ?>
                             <button class="quality-tab <?php echo $isActive; ?>" 
                                     data-quality="<?php echo htmlspecialchars($quality); ?>">
