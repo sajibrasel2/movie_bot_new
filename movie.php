@@ -2,16 +2,52 @@
 /**
  * Individual movie detail page — Premium SEO-optimized redesign
  * URL: /movie.php?slug=xxx
+ * Now supports multi-quality display from database
  */
 $slug = $_GET['slug'] ?? '';
 if (!$slug) { http_response_code(404); echo 'Not found'; exit; }
 
-$movies = json_decode(file_get_contents(__DIR__.'/movies.json'), true) ?: [];
+// Try database first (for MLSBD movies with multi-quality)
 $movie = null;
-$movieIndex = -1;
-foreach ($movies as $i => $m) {
-    if (($m['slug'] ?? '') === $slug) { $movie = $m; $movieIndex = $i; break; }
+$from_db = false;
+try {
+    $db = new PDO('mysql:host=localhost;dbname=techandc_prompts;charset=utf8mb4', 'techandc_bot', '12345Sajibs6@');
+    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    
+    $stmt = $db->prepare("SELECT * FROM mlsbd_movies WHERE slug = ? LIMIT 1");
+    $stmt->execute([$slug]);
+    $db_movie = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($db_movie) {
+        // Convert database format to page format
+        $movie = [
+            'title' => $db_movie['movie_title'],
+            'slug' => $db_movie['slug'],
+            'thumbnail' => $db_movie['poster_url'],
+            'link' => $db_movie['mlsbd_url'],
+            'quality' => $db_movie['quality'],
+            'available_qualities' => json_decode($db_movie['available_qualities'] ?? '[]', true),
+            'quality_variants' => json_decode($db_movie['quality_variants'] ?? '{}', true),
+            'download_links' => json_decode($db_movie['download_links'] ?? '[]', true),
+            'posted_at' => $db_movie['created_at'] ?? 'now',
+            'source_name' => 'MLSBD',
+            'source_emoji' => '🎬',
+        ];
+        $from_db = true;
+    }
+} catch (Exception $e) {
+    // Fallback to JSON if database fails
 }
+
+// Fallback to movies.json if not in database
+if (!$movie) {
+    $movies = json_decode(file_get_contents(__DIR__.'/movies.json'), true) ?: [];
+    $movieIndex = -1;
+    foreach ($movies as $i => $m) {
+        if (($m['slug'] ?? '') === $slug) { $movie = $m; $movieIndex = $i; break; }
+    }
+}
+
 if (!$movie) { http_response_code(404); echo 'Movie not found'; exit; }
 
 $site='https://techandclick.site'; $bot='https://t.me/GetLatestMoviesBot'; $ch='https://t.me/getlatestmoviebot';
@@ -147,7 +183,21 @@ if (count($related) < 4) {
       <div class="meta-badges">
         <?php if($year):?><span class="meta-badge">📅 <?=$year?></span><?php endif;?>
         <?php if($category):?><span class="meta-badge">🌐 <?=$category?></span><?php endif;?>
-        <span class="meta-badge">📀 <?=$quality?></span>
+        
+        <?php 
+        // Show all available qualities
+        $avail_quals = $movie['available_qualities'] ?? [];
+        if (!empty($avail_quals)):
+          foreach ($avail_quals as $aq):
+        ?>
+          <span class="meta-badge">📀 <?=htmlspecialchars($aq)?></span>
+        <?php 
+          endforeach;
+        else:
+        ?>
+          <span class="meta-badge">📀 <?=$quality?></span>
+        <?php endif; ?>
+        
         <?php if($src_name):?><span class="meta-badge">📺 <?=$src_name?></span><?php endif;?>
         <span class="meta-badge">📆 <?=date('M j, Y', strtotime($posted_at))?></span>
       </div>
@@ -157,7 +207,83 @@ if (count($related) < 4) {
         <a class="btn btn-outline" href="<?=$ch?>" target="_blank" rel="noopener">📢 Join Channel</a>
       </div>
 
-      <?php if($dls):?>
+      <?php
+      // Display download section - handles both multi-quality and legacy formats
+      $has_downloads = false;
+      $quality_variants = $movie['quality_variants'] ?? [];
+      $available_qualities = $movie['available_qualities'] ?? [];
+      $legacy_dls = $dls;
+      
+      if (!empty($quality_variants) && !empty($available_qualities)):
+        $has_downloads = true;
+      ?>
+      <div class="dl-section">
+        <h2>📥 Download Links — All Qualities Available</h2>
+        
+        <?php
+        // Sort qualities: 4K > 1080p > 720p > 480p
+        $quality_order = ['4K Ultra HD' => 4, '1080p Full HD' => 3, '720p HD' => 2, '480p' => 1];
+        usort($available_qualities, function($a, $b) use ($quality_order) {
+            return ($quality_order[$b] ?? 0) - ($quality_order[$a] ?? 0);
+        });
+        
+        foreach ($available_qualities as $qual):
+          $variant = $quality_variants[$qual] ?? [];
+          $variant_dls = $variant['download_links'] ?? [];
+          
+          // Quality badge with icon
+          $q_icon = '📀';
+          if (str_contains($qual, '4K')) $q_icon = '🎬';
+          elseif (str_contains($qual, '1080p')) $q_icon = '💎';
+          elseif (str_contains($qual, '720p')) $q_icon = '⭐';
+        ?>
+        
+        <div style="margin-top:24px;padding:16px;background:rgba(255,255,255,0.05);border-radius:12px;border:1px solid rgba(255,255,255,0.1)">
+          <h3 style="margin:0 0 12px 0;color:#00d4ff;font-size:18px">
+            <?=$q_icon?> <?=htmlspecialchars($qual)?>
+            <?php if($qual === $movie['quality']):?>
+              <span style="background:#00d4ff;color:#000;padding:4px 8px;border-radius:6px;font-size:12px;margin-left:8px">BEST</span>
+            <?php endif;?>
+          </h3>
+          
+          <div class="dl-grid">
+            <?php if (!empty($variant_dls)): 
+              foreach ($variant_dls as $source => $url):
+                $source_name = ucfirst($source);
+                $source_icon = '📦';
+                if ($source === 'gdflix') { $source_icon = '🚀'; $source_name = 'GDFlix'; }
+                elseif ($source === 'multicloud') { $source_icon = '☁️'; $source_name = 'MultiCloud'; }
+                elseif ($source === 'filepress') { $source_icon = '📁'; $source_name = 'FilePress'; }
+                elseif ($source === 'hubcloud') { $source_icon = '🌐'; $source_name = 'HubCloud'; }
+            ?>
+            <div class="dl-item">
+              <span class="dl-icon"><?=$source_icon?></span>
+              <span class="dl-text"><?=$source_name?></span>
+              <a class="btn btn-primary" href="<?=htmlspecialchars($url)?>" target="_blank" rel="nofollow">⬇ Download</a>
+            </div>
+            <?php endforeach; 
+            else: ?>
+            <p style="color:var(--text-muted);margin:0">Links will be updated soon via bot</p>
+            <?php endif; ?>
+          </div>
+        </div>
+        
+        <?php endforeach; ?>
+        
+        <!-- Premium Server Ad -->
+        <div style="margin-top:24px">
+          <div class="dl-item premium-server">
+            <span class="dl-icon">⚡</span>
+            <span class="dl-text">Direct Fast Server (No Bot Required)</span>
+            <a class="btn btn-primary" href="<?=base64_decode('aHR0cHM6Ly93d3cuZWZmZWN0aXZlY3BtbmV0d29yay5jb20vdndkdTFmaWp3P2tleT03NDhlYzM1YWI3ODQ0NDJhOTE2ZmU0Y2Q1MzE5MWI4NQ==')?>" target="_blank" rel="nofollow">⬇ Download</a>
+          </div>
+        </div>
+      </div>
+      
+      <?php elseif($legacy_dls): 
+        // Legacy format (from movies.json)
+        $has_downloads = true;
+      ?>
       <div class="dl-section">
         <h2>📥 Download Links</h2>
         <div class="dl-grid">
@@ -167,7 +293,7 @@ if (count($related) < 4) {
             <span class="dl-text">Direct Fast Server (No Bot)</span>
             <a class="btn btn-primary" href="<?=base64_decode('aHR0cHM6Ly93d3cuZWZmZWN0aXZlY3BtbmV0d29yay5jb20vdndkdTFmaWp3P2tleT03NDhlYzM1YWI3ODQ0NDJhOTE2ZmU0Y2Q1MzE5MWI4NQ==')?>" target="_blank" rel="nofollow">⬇ Download</a>
           </div>
-        <?php foreach($dls as $dl):
+        <?php foreach($legacy_dls as $dl):
           $dt=htmlspecialchars($dl['text']??''); $du=htmlspecialchars($dl['url']??'');
           if(!$dt) continue;
         ?>
@@ -183,7 +309,7 @@ if (count($related) < 4) {
         <?php endforeach;?>
         </div>
       </div>
-      <?php endif;?>
+      <?php endif; ?>
 
       <?php if($movie['link']??''):?>
       <div style="margin-top:16px">

@@ -2,25 +2,69 @@
 /**
  * Movies listing page — Premium redesign
  * URL: /movies.php
+ * Now loads from database (mlsbd_movies) with fallback to JSON
  */
-$DATA_FILE = __DIR__.'/movies.json';
-$movies = json_decode(file_get_contents($DATA_FILE), true) ?: [];
 
-// Auto-delete movies older than 10 days
-$ten_days_ago = time() - (10 * 24 * 60 * 60);
-$cleaned = [];
-$changed = false;
-foreach ($movies as $m) {
-    $ts = strtotime($m['posted_at'] ?? 'now');
-    if ($ts >= $ten_days_ago) {
-        $cleaned[] = $m;
-    } else {
-        $changed = true;
+// Try database first
+$movies = [];
+$from_db = false;
+try {
+    $db = new PDO('mysql:host=localhost;dbname=techandc_prompts;charset=utf8mb4', 'techandc_bot', '12345Sajibs6@');
+    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    
+    // Get movies with telegram_message_ids (posted to Telegram)
+    $stmt = $db->query("
+        SELECT movie_title, slug, poster_url, quality, available_qualities, 
+               created_at, mlsbd_url
+        FROM mlsbd_movies 
+        WHERE telegram_message_ids IS NOT NULL
+        ORDER BY created_at DESC
+        LIMIT 100
+    ");
+    
+    $db_movies = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    if (!empty($db_movies)) {
+        foreach ($db_movies as $dm) {
+            $movies[] = [
+                'title' => $dm['movie_title'],
+                'slug' => $dm['slug'],
+                'thumbnail' => $dm['poster_url'],
+                'link' => $dm['mlsbd_url'],
+                'quality' => $dm['quality'],
+                'available_qualities' => json_decode($dm['available_qualities'] ?? '[]', true),
+                'posted_at' => $dm['created_at'] ?? 'now',
+                'source_name' => 'MLSBD',
+                'source_emoji' => '🎬',
+            ];
+        }
+        $from_db = true;
     }
+} catch (Exception $e) {
+    // Fallback to JSON if database fails
 }
-if ($changed) {
-    $movies = $cleaned;
-    file_put_contents($DATA_FILE, json_encode($movies, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+
+// Fallback to movies.json
+if (empty($movies)) {
+    $DATA_FILE = __DIR__.'/movies.json';
+    $movies = json_decode(file_get_contents($DATA_FILE), true) ?: [];
+    
+    // Auto-delete movies older than 10 days (only for JSON)
+    $ten_days_ago = time() - (10 * 24 * 60 * 60);
+    $cleaned = [];
+    $changed = false;
+    foreach ($movies as $m) {
+        $ts = strtotime($m['posted_at'] ?? 'now');
+        if ($ts >= $ten_days_ago) {
+            $cleaned[] = $m;
+        } else {
+            $changed = true;
+        }
+    }
+    if ($changed) {
+        $movies = $cleaned;
+        file_put_contents($DATA_FILE, json_encode($movies, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+    }
 }
 
 $site='https://techandclick.site'; $bot='https://t.me/GetLatestMoviesBot'; $ch='https://t.me/getlatestmoviebot';
@@ -202,6 +246,10 @@ foreach ($movies as $m) {
   $category = detectCategory($m['title'] ?? '');
   $quality = detectQuality($m['title'] ?? '');
   $isNewMovie = isNew($m['posted_at'] ?? 'now');
+  
+  // Get available qualities
+  $avail_qualities = $m['available_qualities'] ?? [];
+  $quality_display = !empty($avail_qualities) ? implode(' + ', $avail_qualities) : $quality;
 ?>
 <article class="card" data-title="<?=strtolower($m['title']??'')?>" data-category="<?=strtolower($category)?>">
 <?php if($thumb):?>
@@ -210,7 +258,13 @@ foreach ($movies as $m) {
       <img src="<?=htmlspecialchars($thumb)?>" alt="<?=$title?>" loading="<?=$i<6?'eager':'lazy'?>">
       <div class="card-badge">
         <?php if($isNewMovie):?><span class="badge badge-new">NEW</span><?php endif;?>
-        <?php if($quality):?><span class="badge badge-quality"><?=$quality?></span><?php endif;?>
+        <?php if(!empty($avail_qualities) && count($avail_qualities) > 1): ?>
+          <span class="badge badge-quality" style="background:linear-gradient(135deg,#00d4ff,#9c40ff)" title="Multiple Qualities Available">
+            Multi-Quality (<?=count($avail_qualities)?>)
+          </span>
+        <?php elseif($quality_display): ?>
+          <span class="badge badge-quality"><?=htmlspecialchars($quality_display)?></span>
+        <?php endif; ?>
         <?php if($category !== 'Other'):?><span class="badge badge-lang"><?=$category?></span><?php endif;?>
       </div>
       <div class="card-overlay">
