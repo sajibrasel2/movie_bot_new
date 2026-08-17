@@ -57,7 +57,7 @@ $desc = "Download $title via Telegram bot. Get direct download links for $title 
 $dls = $movie['download_links'] ?? [];
 $src_name = htmlspecialchars($movie['source_name'] ?? '');
 $src_emoji = $movie['source_emoji'] ?? '🎬';
-$movie_url = "$site/movie.php?slug=$slug";
+$movie_url = "$site/movie/$slug";
 $posted_at = $movie['posted_at'] ?? 'now';
 
 // Detect category & quality
@@ -122,7 +122,7 @@ if (count($related) < 4) {
 <meta name="description" content="<?=htmlspecialchars($desc)?>">
 <meta name="keywords" content="<?=$title?> download, <?=$title?> telegram, <?=$title?> movie download, free download <?=$title?>">
 <meta name="robots" content="index,follow,max-image-preview:large">
-<link rel="canonical" href="<?=$site?>/movie.php?slug=<?=$slug?>">
+<link rel="canonical" href="<?=$site?>/movie/<?=$slug?>">
 <meta property="og:type" content="article">
 <meta property="og:title" content="<?=$title?> — Download on Telegram">
 <meta property="og:description" content="<?=htmlspecialchars($desc)?>">
@@ -350,7 +350,7 @@ if (count($related) < 4) {
       $rslug = $rm['slug']??'';
       $rtitle = htmlspecialchars($rm['title']??'');
       $rthumb = $rm['thumbnail']??'';
-      $rurl = "$site/movie.php?slug=$rslug";
+      $rurl = "$site/movie/$rslug";
       $rcat = detectCategory($rm['title']??'');
       $rqual = detectQuality($rm['title']??'');
     ?>

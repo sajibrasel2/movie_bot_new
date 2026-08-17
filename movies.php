@@ -242,7 +242,7 @@ foreach ($movies as $m) {
 <?php else: foreach($movies as $i => $m):
   $slug=$m['slug']??''; $title=htmlspecialchars($m['title']??''); $thumb=$m['thumbnail']??'';
   $src=htmlspecialchars(($m['source_emoji']??'🎬').' '.($m['source_name']??''));
-  $dls=$m['download_links']??[]; $url="$site/movie.php?slug=$slug";
+  $dls=$m['download_links']??[]; $url="$site/movie/$slug";
   $category = detectCategory($m['title'] ?? '');
   $quality = detectQuality($m['title'] ?? '');
   $isNewMovie = isNew($m['posted_at'] ?? 'now');
