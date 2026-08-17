@@ -124,57 +124,40 @@ def fetch_download_links_from_page(movie_url):
         
         soup = BeautifulSoup(r.text, 'html.parser')
         
-        # Collect ALL savelinks URLs with their surrounding text/context
+        # Collect ALL savelinks URLs with their link text
+        # MLSBD uses text like: "Download in 480p quality", "Download in 720p quality", etc.
         savelinks_urls = []
         for a in soup.find_all('a', href=True):
             href = a['href']
             if 'savelinks.me' in href:
-                # Get surrounding text to detect quality
-                link_text = a.get_text(strip=True)
-                # Check parent elements for quality context
-                parent_text = ''
-                parent = a.parent
-                for _ in range(3):
-                    if parent:
-                        parent_text = parent.get_text(strip=True)
-                        parent = parent.parent
-                context = f"{link_text} {parent_text}"
-                savelinks_urls.append((href, context))
+                link_text = a.get_text(strip=True).lower()
+                savelinks_urls.append((href, link_text))
         
         if not savelinks_urls:
             return {}, {}
         
         logger.info(f"  🔗 Found {len(savelinks_urls)} Savelinks URLs")
         
-        # Map qualities to savelinks
+        # Map qualities to savelinks based on link text
         quality_map = {
             '4K Ultra HD': [],
             '1080p Full HD': [],
             '720p HD': [],
             '480p': [],
         }
-        unmapped = []
         
-        for url, context in savelinks_urls:
-            ctx_upper = context.upper()
-            if '4K' in ctx_upper or '2160P' in ctx_upper:
+        for url, link_text in savelinks_urls:
+            # Skip "Watch Online" links
+            if 'watch online' in link_text:
+                continue
+            if '4k' in link_text or '2160' in link_text:
                 quality_map['4K Ultra HD'].append(url)
-            elif '1080P' in ctx_upper:
+            elif '1080' in link_text:
                 quality_map['1080p Full HD'].append(url)
-            elif '720P' in ctx_upper:
+            elif '720' in link_text:
                 quality_map['720p HD'].append(url)
-            elif '480P' in ctx_upper:
+            elif '480' in link_text:
                 quality_map['480p'].append(url)
-            else:
-                unmapped.append(url)
-        
-        # If context-based mapping failed, distribute by order
-        # MLSBD usually orders: 480p, 720p, 1080p, 4K
-        if all(len(v) == 0 for v in quality_map.values()) and unmapped:
-            order = ['480p', '720p HD', '1080p Full HD', '4K Ultra HD']
-            for i, url in enumerate(unmapped):
-                if i < len(order):
-                    quality_map[order[i]].append(url)
         
         # Resolve each quality's savelinks
         quality_downloads = {}
