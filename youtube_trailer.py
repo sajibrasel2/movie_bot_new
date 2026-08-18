@@ -27,17 +27,25 @@ def get_youtube_trailer(movie_title, year=None):
         YouTube URL string on success, None on failure.
     """
     try:
-        # Clean title — remove quality/platform tags for better search
+        clean = movie_title
+        # Clean title — remove quality/platform/language tags aggressively
         import re
         clean = re.sub(
             r'\b(480p|720p|1080p|4k|uhd|web-?dl|bluray|x264|x265|hevc|'
-            r'dual audio|hindi|bengali|english|amazon|netflix|hotstar|zee5|'
-            r'chorki|hoichoi|bongobd|esub|org|ORG)\b',
-            '', movie_title, flags=re.IGNORECASE
+            r'dual\s*audio|hindi|bengali|english|tamil|telugu|korean|'
+            r'amazon|netflix|hotstar|zee5|chorki|hoichoi|bongobd|'
+            r'esub|org|dubbed|ORG|WEB-DL|S\d+E\d+|S\d+|E\d+|'
+            r'season\s*\d+|episode\s*\d+)\b',
+            '', clean, flags=re.IGNORECASE
         )
+        # Remove year from title (keep separately for query)
+        clean = re.sub(r'\b(19|20)\d{2}\b', '', clean)
+        # Remove pipes and extra spaces
+        clean = re.sub(r'[|&]+', ' ', clean)
         clean = re.sub(r'\s+', ' ', clean).strip()
 
         query = f"{clean} {year} official trailer" if year else f"{clean} official trailer"
+        logger.info(f"  🔍 YouTube search: {query}")
 
         params = {
             "part": "snippet",
