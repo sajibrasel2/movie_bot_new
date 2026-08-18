@@ -39,7 +39,7 @@ def get_youtube_trailer(movie_title, year=None):
             '', clean, flags=re.IGNORECASE
         )
         # Remove year from title (keep separately for query)
-        clean = re.sub(r'\b(19|20)\d{2}\b', '', clean)
+        clean = re.sub(r'\(?(19|20)\d{2}\)?', '', clean)
         # Remove pipes and extra spaces
         clean = re.sub(r'[|&]+', ' ', clean)
         clean = re.sub(r'\s+', ' ', clean).strip()
