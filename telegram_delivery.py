@@ -82,7 +82,15 @@ def send_to_telegram(movie_data):
             caption += f"📅 Year: {year}\n"
         caption += f"\n🔗 [Watch & Download]({url})"
 
-        if poster_url:
+        # Check if poster_url is valid
+        has_poster = (
+            poster_url and
+            isinstance(poster_url, str) and
+            poster_url.startswith('http') and
+            poster_url != 'N/A'
+        )
+
+        if has_poster:
             api_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto"
             data = {
                 'chat_id': TELEGRAM_CHANNEL,
