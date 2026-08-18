@@ -33,7 +33,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ── Facebook import (safe — won't crash if file missing) ──
+# ── Facebook poster (safe import) ──
 try:
     from facebook_poster import post_movie_to_facebook
     FB_ENABLED = True
@@ -41,6 +41,15 @@ try:
 except ImportError:
     FB_ENABLED = False
     logger.warning("⚠️ facebook_poster.py not found — Facebook posting disabled")
+
+# ── YouTube trailer (safe import) ──
+try:
+    from youtube_trailer import get_youtube_trailer
+    YT_ENABLED = True
+    logger.info("🎬 YouTube trailer fetcher loaded")
+except ImportError:
+    YT_ENABLED = False
+    logger.warning("⚠️ youtube_trailer.py not found — trailer fetching disabled")
 
 
 def get_db_connection():
@@ -70,7 +79,7 @@ def get_unposted_movies(cursor, limit=5):
         return []
 
 
-def send_to_telegram(movie_data):
+def send_to_telegram(movie_data, trailer_url=None):
     try:
         movie_id, title, slug, poster_url, quality, year, _ = movie_data
 
@@ -81,6 +90,9 @@ def send_to_telegram(movie_data):
         if year:
             caption += f"📅 Year: {year}\n"
         caption += f"\n🔗 [Watch & Download]({url})"
+
+        if trailer_url:
+            caption += f"\n🎥 [Watch Trailer]({trailer_url})"
 
         # Check if poster_url is valid
         has_poster = (
@@ -162,8 +174,13 @@ def main():
         year     = movie_data[5]
         avail_q_raw = movie_data[6]
 
-        # ── Step 1: Telegram ──
-        message_id = send_to_telegram(movie_data)
+        # ── Step 1: YouTube Trailer ──
+        trailer_url = None
+        if YT_ENABLED:
+            trailer_url = get_youtube_trailer(title, year)
+
+        # ── Step 2: Telegram ──
+        message_id = send_to_telegram(movie_data, trailer_url=trailer_url)
         if message_id:
             mark_as_posted(cursor, movie_id, message_id)
             posted_count += 1
@@ -182,6 +199,7 @@ def main():
                     "year":                year,
                     "slug":                slug,
                     "poster_url":          poster,
+                    "trailer_url":         trailer_url,
                 }
                 ok = post_movie_to_facebook(fb_movie)
                 if ok:

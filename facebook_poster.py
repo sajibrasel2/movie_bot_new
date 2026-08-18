@@ -143,6 +143,12 @@ def build_facebook_message(movie: dict) -> str:
     msg += f"📀 Quality: {quality_line}\n\n"
     msg += f"📥 Download Links Available!\n"
     msg += f"👉 {movie_url}\n\n"
+
+    trailer_url = movie.get("trailer_url")
+    if trailer_url:
+        msg += f"🎥 Watch Trailer:\n"
+        msg += f"👉 {trailer_url}\n\n"
+
     msg += f"🤖 Get via Telegram Bot:\n"
     msg += f"👉 @GetLatestMoviesBot\n"
     msg += f"🔗 {TELEGRAM_CHANNEL}\n\n"
