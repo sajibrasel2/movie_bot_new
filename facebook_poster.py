@@ -31,7 +31,7 @@ FB_API_VERSION = "v19.0"
 FB_API_BASE = f"https://graph.facebook.com/{FB_API_VERSION}"
 
 # Telegram channel/bot link for download CTA
-TELEGRAM_CHANNEL = "https://t.me/getlatestmoviebot"
+TELEGRAM_CHANNEL = "https://t.me/GetLatestMoviesBot"
 MOVIE_SITE_URL = "https://movies.techandclick.site"
 
 DB_CONFIG = {
@@ -144,7 +144,8 @@ def build_facebook_message(movie: dict) -> str:
     msg += f"📥 Download Links Available!\n"
     msg += f"👉 {movie_url}\n\n"
     msg += f"🤖 Get via Telegram Bot:\n"
-    msg += f"👉 {TELEGRAM_CHANNEL}\n\n"
+    msg += f"👉 @GetLatestMoviesBot\n"
+    msg += f"🔗 {TELEGRAM_CHANNEL}\n\n"
     msg += f"#Movie #Download #FreMovies #BollywoodMovies #HollywoodMovies"
 
     return msg
