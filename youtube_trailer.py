@@ -15,7 +15,7 @@ YOUTUBE_SEARCH_URL = "https://www.googleapis.com/youtube/v3/search"
 logger = logging.getLogger(__name__)
 
 
-def get_youtube_trailer(movie_title: str, year=None) -> str | None:
+def get_youtube_trailer(movie_title, year=None):
     """
     Search YouTube for the official trailer of a movie.
 
