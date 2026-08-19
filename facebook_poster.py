@@ -34,6 +34,41 @@ FB_API_BASE = f"https://graph.facebook.com/{FB_API_VERSION}"
 TELEGRAM_CHANNEL = "https://t.me/GetLatestMoviesBot"
 MOVIE_SITE_URL = "https://movies.techandclick.site"
 
+# =====================================================
+# 18+ CONTENT FILTER
+# =====================================================
+
+ADULT_KEYWORDS = [
+    # Platforms known for adult content
+    'ullu', 'ulluoriginal', 'rabbitmx', 'rabbit', 'nuefliks', 'nueflix',
+    'hotmx', 'cineprime', 'voovi', 'fugi', 'bigmoviezoo', 'boomex',
+    'kooku', 'feelit', 'primeshots', 'primeplay', 'hunters', 'huntcinema',
+    'uncut', 'digimovie', 'mojflix', 'moodx', 'xtramood', 'xprime',
+    'naariflix', 'besharams', 'hookup', 'mastiflix', 'erotik',
+    # Content indicators
+    '18+', 'adult', 'unrated', 'xxx', 'erotic', 'explicit',
+    'softcore', 'hardcore', 'nudity', 'nude', 'bold scene',
+    'hot scene', 'intimate', 'b-grade', 'bgrade', 'b grade',
+    # Series types
+    'web series 18', 'adult web series', 'adult series',
+    'hot web series', 'bold web series', 'romantic web series',
+    # Common 18+ title words
+    'suhagraat', 'randi', 'affair', 'charamsukh', 'palang tod',
+    'prem kheli', 'hot shots', 'ganda maal', 'tadap', 'khwahish',
+]
+
+
+def is_adult_content(title):
+    """
+    Check if movie title contains 18+ / adult content indicators.
+    Returns True if adult content detected (should be skipped).
+    """
+    title_lower = title.lower()
+    for keyword in ADULT_KEYWORDS:
+        if keyword in title_lower:
+            return True
+    return False
+
 DB_CONFIG = {
     "host": "localhost",
     "user": "techandc_bot",
@@ -164,16 +199,16 @@ def build_facebook_message(movie: dict) -> str:
 def post_movie_to_facebook(movie: dict) -> bool:
     """
     Post a single movie to Facebook Page.
-    This is the main entry point called after Telegram delivery.
-
-    Args:
-        movie: dict with keys: title, quality, available_qualities,
-               year, slug, poster_url
-
-    Returns:
-        True on success, False on failure (does NOT raise)
+    Skips 18+ / adult content automatically.
+    Returns True on success, False on failure or skip.
     """
     title = movie.get("title", "Unknown")
+
+    # ── 18+ Filter ──
+    if is_adult_content(title):
+        logger.info(f"  🚫 Skipped (18+ content): {title}")
+        return False
+
     try:
         message = build_facebook_message(movie)
         poster_url = movie.get("poster_url", "")
@@ -249,6 +284,11 @@ def run_standalone():
     failed = 0
 
     for row in movies:
+        # Skip 18+ content
+        if is_adult_content(row["movie_title"]):
+            logger.info(f"  🚫 Skipped (18+ content): {row['movie_title'][:50]}")
+            continue
+
         # Parse available_qualities JSON
         try:
             avail_q = json.loads(row.get("available_qualities") or "[]")
