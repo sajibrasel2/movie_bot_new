@@ -33,14 +33,15 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ── Facebook poster (safe import) ──
-try:
-    from facebook_poster import post_movie_to_facebook
-    FB_ENABLED = True
-    logger.info("📘 Facebook poster loaded")
-except ImportError:
-    FB_ENABLED = False
-    logger.warning("⚠️ facebook_poster.py not found — Facebook posting disabled")
+# ── Facebook poster (safe import) ── DISABLED
+FB_ENABLED = False
+# try:
+#     from facebook_poster import post_movie_to_facebook
+#     FB_ENABLED = True
+#     logger.info("📘 Facebook poster loaded")
+# except ImportError:
+#     FB_ENABLED = False
+#     logger.warning("⚠️ facebook_poster.py not found — Facebook posting disabled")
 
 # ── YouTube trailer (safe import) ──
 try:
