@@ -35,29 +35,33 @@ TELEGRAM_CHANNEL = "https://t.me/GetLatestMoviesBot"
 MOVIE_SITE_URL = "https://movies.techandclick.site"
 
 # =====================================================
-# CONTENT FILTER — DUAL LAYER (Whitelist + Blacklist)
+# CONTENT FILTER — TRIPLE LAYER PROTECTION
 # =====================================================
 
-# Layer 1: WHITELIST — Only these platforms are allowed on Facebook
-# Any movie NOT from these platforms will be blocked
+import re as _re
+
+# Layer 1: STRICT WHITELIST — ONLY these platforms allowed on Facebook
 ALLOWED_PLATFORMS = [
-    'netflix', 'amazon', 'prime video', 'disney', 'disney+',
-    'hotstar', 'zee5', 'chorki', 'hoichoi', 'bongobd', 'bongo',
-    'sony', 'sonyliv', 'jiocinema', 'jio cinema',
-    'star plus', 'colors', 'sab tv', 'star jalsha',
-    'star vijay', 'sun tv', 'gemini tv',
-    'youtube', 'voot', 'mx player', 'aha',
-    'lionsgate', 'paramount', 'hbo', 'hulu', 'apple tv',
-    'channel i', 'ntv', 'rtv', 'banglavision',
-    # Typo variants (common MLSBD typos)
-    'amaozn', 'amazn', 'amazone', 'netfilx', 'netflex',
-    'hotsatr', 'hotstart', 'zee 5', 'chorkii',
+    # International OTT
+    'netflix', 'amazon', 'prime video', 'disney+', 'disney plus',
+    'hotstar', 'hbo', 'hulu', 'apple tv', 'paramount', 'peacock',
+    'lionsgate',
+    # Indian OTT
+    'zee5', 'sonyliv', 'sony liv', 'jiocinema', 'jio cinema',
+    'voot', 'aha', 'mx player', 'discovery+',
+    # Bangladeshi/Bengali OTT
+    'chorki', 'hoichoi', 'bongobd', 'bongo',
+    # TV Channels
+    'star plus', 'colors', 'sab tv', 'star jalsha', 'star vijay',
+    'sun tv', 'gemini tv', 'channel i', 'ntv', 'rtv', 'banglavision',
+    # MLSBD typo variants
+    'amaozn', 'amazn', 'netfilx', 'netflex', 'hotsatr', 'zee 5',
 ]
 
-# Layer 2: BLACKLIST — These keywords = instant block regardless of platform
+# Layer 2: BLACKLIST — instant block regardless of platform
 ADULT_KEYWORDS = [
     # Adult OTT platforms
-    'ullu', 'ulluoriginal', 'rabbitmx', 'rabbit mx',
+    'ullu', 'ulluoriginal', 'rabbitmx', 'rabbit mx', 'rabbit movies',
     'nuefliks', 'nueflix', 'hotmx', 'hot mx',
     'cineprime', 'cine prime', 'voovi', 'fugi',
     'bigmoviezoo', 'boomex', 'kooku', 'feelit',
@@ -70,54 +74,63 @@ ADULT_KEYWORDS = [
     'erotik', 'fliz', 'flizmovies', 'fliz movies',
     'gupchup', 'gup chup', 'dreamott', 'dream ott',
     'neonx', 'neon x', 'boom movies', 'boommovies',
-    'hotshots', 'hot shots', 'balloons', 'wow entertainment',
-    'showhit', 'show hit', 'triflicks', 'tri flicks',
-    'ratri', 'aappytv', 'aappy', 'hootzy', 'bindastimes',
-    'bindas times', 'desiflix', 'desi flix',
-
+    'hotshots', 'balloons', 'wow entertainment',
+    'showhit', 'triflicks', 'ratri', 'aappytv', 'aappy',
+    'hootzy', 'bindastimes', 'bindas times', 'desiflix', 'desi flix',
+    'vivamax', 'viva max',  # Filipino adult platform
+    'altbalaji', 'alt balaji',
+    'erohub', 'desipapa', 'xvideos', 'xnxx', 'pornhub',
     # Explicit content keywords
-    '18+', '18 +', 'adult', 'adults only',
+    '18+', '18 +', '18plus',
+    'adult', 'adults only',
     'xxx', 'xxxx', 'erotic', 'erotica', 'explicit',
     'softcore', 'hardcore', 'nudity', 'nude', 'naked',
-    'bold scene', 'hot scene', 'intimate scene',
+    'bold scene', 'hot scene', 'intimate scene', 'sex scene',
     'b-grade', 'bgrade', 'b grade',
-    'sex', 'sexual', 'sensual',
-
-    # Common adult title words (Hindi/Bengali)
-    'suhagraat', 'suhagrat', 'randi', 'randii',
+    'sexual content', 'sensual', 'uncensored',
+    # Adult Hindi/Bengali/Tagalog keywords
+    'suhagraat', 'suhagrat', 'randi',
     'charamsukh', 'charam sukh', 'palang tod', 'palangtod',
-    'prem kheli', 'ganda maal', 'gandamaal',
-    'hot shots', 'hotshots',
-    'tadap', 'khwahish', 'hawas', 'hawa badle',
-    'jaism', 'jasim', 'rangeen', 'rangeen raat',
-    'rangeeli', 'jawani', 'jawaan', 'pyaas',
-    'ishq mein', 'kaam deva', 'kamdev',
+    'ganda maal', 'gandamaal', 'hawas', 'hawa badle',
+    'rangeen raat', 'rangeen raatein', 'rangeeli', 'jawani',
+    'pyaas', 'kaam deva', 'kamdev', 'tadap', 'khwahish',
+    'tagalong adult', 'pinay sex', 'pinay xxx',
+]
+
+# Layer 3: REGEX patterns for suspicious content
+SUSPICIOUS_PATTERNS = [
+    r'\b18\s*\+',
+    r'\bXXX\b',
+    r'uncut\s+version',
+    r'\buncensored\b',
+    r'\bs\d+\s*e\d+.*ullu\b',
 ]
 
 
 def is_safe_for_facebook(title):
     """
-    Dual-layer content check for Facebook safety.
-
-    Layer 1 — Whitelist: Must contain at least one safe platform name
-    Layer 2 — Blacklist: Must NOT contain any adult keywords
-
+    Triple-layer content check for Facebook safety.
     Returns (is_safe, reason) tuple.
     """
     title_lower = title.lower()
 
-    # Layer 2 first: Blacklist check (faster rejection)
+    # Layer 2: Blacklist check (fastest)
     for keyword in ADULT_KEYWORDS:
         if keyword in title_lower:
             return False, f"Blacklisted keyword: '{keyword}'"
 
-    # Layer 1: Whitelist check — must have a known safe platform
+    # Layer 3: Pattern check
+    for pattern in SUSPICIOUS_PATTERNS:
+        if _re.search(pattern, title, _re.IGNORECASE):
+            return False, f"Suspicious pattern: '{pattern}'"
+
+    # Layer 1: Whitelist check
     has_safe_platform = any(p in title_lower for p in ALLOWED_PLATFORMS)
 
-    # Also allow: Dual Audio movies (typically Hollywood/mainstream)
-    # and movies without any platform tag (could be theatrical releases)
+    # Allow Dual Audio / BluRay (mainstream Hollywood)
     if not has_safe_platform:
-        if 'dual audio' in title_lower or 'bluray' in title_lower or 'blu ray' in title_lower:
+        if ('dual audio' in title_lower or 'bluray' in title_lower
+                or 'blu ray' in title_lower or 'blu-ray' in title_lower):
             has_safe_platform = True
 
     if not has_safe_platform:
