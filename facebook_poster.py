@@ -49,6 +49,9 @@ ALLOWED_PLATFORMS = [
     'youtube', 'voot', 'mx player', 'aha',
     'lionsgate', 'paramount', 'hbo', 'hulu', 'apple tv',
     'channel i', 'ntv', 'rtv', 'banglavision',
+    # Typo variants (common MLSBD typos)
+    'amaozn', 'amazn', 'amazone', 'netfilx', 'netflex',
+    'hotsatr', 'hotstart', 'zee 5', 'chorkii',
 ]
 
 # Layer 2: BLACKLIST — These keywords = instant block regardless of platform
@@ -110,6 +113,13 @@ def is_safe_for_facebook(title):
 
     # Layer 1: Whitelist check — must have a known safe platform
     has_safe_platform = any(p in title_lower for p in ALLOWED_PLATFORMS)
+
+    # Also allow: Dual Audio movies (typically Hollywood/mainstream)
+    # and movies without any platform tag (could be theatrical releases)
+    if not has_safe_platform:
+        if 'dual audio' in title_lower or 'bluray' in title_lower or 'blu ray' in title_lower:
+            has_safe_platform = True
+
     if not has_safe_platform:
         return False, "No recognized safe platform found in title"
 
