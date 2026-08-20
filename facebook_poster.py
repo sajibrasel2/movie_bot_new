@@ -35,39 +35,85 @@ TELEGRAM_CHANNEL = "https://t.me/GetLatestMoviesBot"
 MOVIE_SITE_URL = "https://movies.techandclick.site"
 
 # =====================================================
-# 18+ CONTENT FILTER
+# CONTENT FILTER — DUAL LAYER (Whitelist + Blacklist)
 # =====================================================
 
+# Layer 1: WHITELIST — Only these platforms are allowed on Facebook
+# Any movie NOT from these platforms will be blocked
+ALLOWED_PLATFORMS = [
+    'netflix', 'amazon', 'prime video', 'disney', 'disney+',
+    'hotstar', 'zee5', 'chorki', 'hoichoi', 'bongobd', 'bongo',
+    'sony', 'sonyliv', 'jiocinema', 'jio cinema',
+    'star plus', 'colors', 'sab tv', 'star jalsha',
+    'star vijay', 'sun tv', 'gemini tv',
+    'youtube', 'voot', 'mx player', 'aha',
+    'lionsgate', 'paramount', 'hbo', 'hulu', 'apple tv',
+    'channel i', 'ntv', 'rtv', 'banglavision',
+]
+
+# Layer 2: BLACKLIST — These keywords = instant block regardless of platform
 ADULT_KEYWORDS = [
-    # Platforms known for adult content
-    'ullu', 'ulluoriginal', 'rabbitmx', 'rabbit', 'nuefliks', 'nueflix',
-    'hotmx', 'cineprime', 'voovi', 'fugi', 'bigmoviezoo', 'boomex',
-    'kooku', 'feelit', 'primeshots', 'primeplay', 'hunters', 'huntcinema',
-    'uncut', 'digimovie', 'mojflix', 'moodx', 'xtramood', 'xprime',
-    'naariflix', 'besharams', 'hookup', 'mastiflix', 'erotik',
-    # Content indicators
-    '18+', 'adult', 'unrated', 'xxx', 'erotic', 'explicit',
-    'softcore', 'hardcore', 'nudity', 'nude', 'bold scene',
-    'hot scene', 'intimate', 'b-grade', 'bgrade', 'b grade',
-    # Series types
-    'web series 18', 'adult web series', 'adult series',
-    'hot web series', 'bold web series', 'romantic web series',
-    # Common 18+ title words
-    'suhagraat', 'randi', 'affair', 'charamsukh', 'palang tod',
-    'prem kheli', 'hot shots', 'ganda maal', 'tadap', 'khwahish',
+    # Adult OTT platforms
+    'ullu', 'ulluoriginal', 'rabbitmx', 'rabbit mx',
+    'nuefliks', 'nueflix', 'hotmx', 'hot mx',
+    'cineprime', 'cine prime', 'voovi', 'fugi',
+    'bigmoviezoo', 'boomex', 'kooku', 'feelit',
+    'primeshots', 'prime shots', 'primeplay', 'prime play',
+    'hunters', 'huntcinema', 'hunt cinema',
+    'uncut', 'digimovie', 'digi movie',
+    'mojflix', 'moodx', 'mood x', 'xtramood', 'xtra mood',
+    'xprime', 'x prime', 'naariflix', 'naari flix',
+    'besharams', 'hookup', 'mastiflix', 'masti flix',
+    'erotik', 'fliz', 'flizmovies', 'fliz movies',
+    'gupchup', 'gup chup', 'dreamott', 'dream ott',
+    'neonx', 'neon x', 'boom movies', 'boommovies',
+    'hotshots', 'hot shots', 'balloons', 'wow entertainment',
+    'showhit', 'show hit', 'triflicks', 'tri flicks',
+    'ratri', 'aappytv', 'aappy', 'hootzy', 'bindastimes',
+    'bindas times', 'desiflix', 'desi flix',
+
+    # Explicit content keywords
+    '18+', '18 +', 'adult', 'adults only',
+    'xxx', 'xxxx', 'erotic', 'erotica', 'explicit',
+    'softcore', 'hardcore', 'nudity', 'nude', 'naked',
+    'bold scene', 'hot scene', 'intimate scene',
+    'b-grade', 'bgrade', 'b grade',
+    'sex', 'sexual', 'sensual',
+
+    # Common adult title words (Hindi/Bengali)
+    'suhagraat', 'suhagrat', 'randi', 'randii',
+    'charamsukh', 'charam sukh', 'palang tod', 'palangtod',
+    'prem kheli', 'ganda maal', 'gandamaal',
+    'hot shots', 'hotshots',
+    'tadap', 'khwahish', 'hawas', 'hawa badle',
+    'jaism', 'jasim', 'rangeen', 'rangeen raat',
+    'rangeeli', 'jawani', 'jawaan', 'pyaas',
+    'ishq mein', 'kaam deva', 'kamdev',
 ]
 
 
-def is_adult_content(title):
+def is_safe_for_facebook(title):
     """
-    Check if movie title contains 18+ / adult content indicators.
-    Returns True if adult content detected (should be skipped).
+    Dual-layer content check for Facebook safety.
+
+    Layer 1 — Whitelist: Must contain at least one safe platform name
+    Layer 2 — Blacklist: Must NOT contain any adult keywords
+
+    Returns (is_safe, reason) tuple.
     """
     title_lower = title.lower()
+
+    # Layer 2 first: Blacklist check (faster rejection)
     for keyword in ADULT_KEYWORDS:
         if keyword in title_lower:
-            return True
-    return False
+            return False, f"Blacklisted keyword: '{keyword}'"
+
+    # Layer 1: Whitelist check — must have a known safe platform
+    has_safe_platform = any(p in title_lower for p in ALLOWED_PLATFORMS)
+    if not has_safe_platform:
+        return False, "No recognized safe platform found in title"
+
+    return True, "OK"
 
 DB_CONFIG = {
     "host": "localhost",
@@ -204,9 +250,10 @@ def post_movie_to_facebook(movie: dict) -> bool:
     """
     title = movie.get("title", "Unknown")
 
-    # ── 18+ Filter ──
-    if is_adult_content(title):
-        logger.info(f"  🚫 Skipped (18+ content): {title}")
+    # ── Dual-layer safety check ──
+    is_safe, reason = is_safe_for_facebook(title)
+    if not is_safe:
+        logger.info(f"  🚫 Blocked for Facebook — {reason}: {title[:60]}")
         return False
 
     try:
@@ -284,9 +331,10 @@ def run_standalone():
     failed = 0
 
     for row in movies:
-        # Skip 18+ content
-        if is_adult_content(row["movie_title"]):
-            logger.info(f"  🚫 Skipped (18+ content): {row['movie_title'][:50]}")
+        # Dual-layer safety check
+        is_safe, reason = is_safe_for_facebook(row["movie_title"])
+        if not is_safe:
+            logger.info(f"  🚫 Blocked — {reason}: {row['movie_title'][:50]}")
             continue
 
         # Parse available_qualities JSON
