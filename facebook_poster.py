@@ -25,7 +25,7 @@ import requests
 # CONFIGURATION
 # =====================================================
 
-FB_PAGE_ID = "1180939241780131"
+FB_PAGE_ID = "1192585593947865"
 FB_ACCESS_TOKEN = "EAAVC90kVmt0BSQ2lBvFvJJAZAAzeXZAZB0JDPDIgaLXpZBNC8Xg5B16DdvI79dJ86rSLIP5LBHZAUyJdpCYIt2ZCqlObH4zAEY4VAWlJi8CZBq6vUUkg0QmSNWrwKt9DTHuVw39DsZC9ieZCgZCeZCdS3dyCZCBeFcsA1r4AcQl3YdBU0g41JVDhsi3ZAjj4756lBKnXqitT3F10kWa3uD5Dkp97m"
 FB_API_VERSION = "v19.0"
 FB_API_BASE = f"https://graph.facebook.com/{FB_API_VERSION}"
@@ -50,10 +50,8 @@ ALLOWED_PLATFORMS = [
     'zee5', 'sonyliv', 'sony liv', 'jiocinema', 'jio cinema',
     'voot', 'aha', 'mx player', 'discovery+',
     # Bangladeshi/Bengali OTT
-    'chorki', 'hoichoi', 'bongobd', 'bongo',
-    # TV Channels
-    'star plus', 'colors', 'sab tv', 'star jalsha', 'star vijay',
-    'sun tv', 'gemini tv', 'channel i', 'ntv', 'rtv', 'banglavision',
+    'chorki', 'hoichoi', 'bongobd', 'bongo bd', 'bongo',
+    'banglavision', 'channel i', 'ntv', 'rtv',
     # MLSBD typo variants
     'amaozn', 'amazn', 'netfilx', 'netflex', 'hotsatr', 'zee 5',
 ]
