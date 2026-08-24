@@ -224,10 +224,16 @@ def build_facebook_message(movie: dict) -> str:
         msg += f"🎥 Watch Trailer:\n"
         msg += f"👉 {trailer_url}\n\n"
 
-    msg += f"🤖 Get via Telegram Bot:\n"
-    msg += f"👉 @GetLatestMoviesBot\n"
-    msg += f"🔗 {TELEGRAM_CHANNEL}\n\n"
-    msg += f"#Movie #Download #FreMovies #BollywoodMovies #HollywoodMovies"
+    msg += f"━━━━━━━━━━━━━━━━━━━━\n"
+    msg += f"⚠️ Due to Facebook restrictions, not all movies can be posted here.\n\n"
+    msg += f"🎯 Want to watch ALL movies — Bollywood, Hollywood, Bengali, South Indian, Web Series & more?\n\n"
+    msg += f"� Join our FREE Telegram Channel now!\n"
+    msg += f"📢 t.me/newmoviesarena4u\n\n"
+    msg += f"✅ Get every new release instantly\n"
+    msg += f"✅ All qualities: 480p | 720p | 1080p | 4K\n"
+    msg += f"✅ Direct download links — No ads, No spam\n"
+    msg += f"━━━━━━━━━━━━━━━━━━━━\n\n"
+    msg += f"#Movie #Download #FreeMovies #Bollywood #Hollywood #BanglaMovie #WebSeries"
 
     return msg
 
