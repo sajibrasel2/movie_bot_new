@@ -35,28 +35,12 @@ TELEGRAM_CHANNEL = "https://t.me/GetLatestMoviesBot"
 MOVIE_SITE_URL = "https://movies.techandclick.site"
 
 # =====================================================
-# CONTENT FILTER — TRIPLE LAYER PROTECTION
+# CONTENT FILTER — BLACKLIST ONLY (18+ block)
 # =====================================================
 
 import re as _re
 
-# Layer 1: STRICT WHITELIST — ONLY these platforms allowed on Facebook
-ALLOWED_PLATFORMS = [
-    # International OTT
-    'netflix', 'amazon', 'prime video', 'disney+', 'disney plus',
-    'hotstar', 'hbo', 'hulu', 'apple tv', 'paramount', 'peacock',
-    'lionsgate',
-    # Indian OTT
-    'zee5', 'sonyliv', 'sony liv', 'jiocinema', 'jio cinema',
-    'voot', 'aha', 'mx player', 'discovery+',
-    # Bangladeshi/Bengali OTT
-    'chorki', 'hoichoi', 'bongobd', 'bongo bd', 'bongo',
-    'banglavision', 'channel i', 'ntv', 'rtv',
-    # MLSBD typo variants
-    'amaozn', 'amazn', 'netfilx', 'netflex', 'hotsatr', 'zee 5',
-]
-
-# Layer 2: BLACKLIST — instant block regardless of platform
+# BLACKLIST — block only 18+ adult content
 ADULT_KEYWORDS = [
     # Adult OTT platforms
     'ullu', 'ulluoriginal', 'rabbitmx', 'rabbit mx', 'rabbit movies',
@@ -75,7 +59,7 @@ ADULT_KEYWORDS = [
     'hotshots', 'balloons', 'wow entertainment',
     'showhit', 'triflicks', 'ratri', 'aappytv', 'aappy',
     'hootzy', 'bindastimes', 'bindas times', 'desiflix', 'desi flix',
-    'vivamax', 'viva max',  # Filipino adult platform
+    'vivamax', 'viva max',
     'altbalaji', 'alt balaji',
     'erohub', 'desipapa', 'xvideos', 'xnxx', 'pornhub',
     # Explicit content keywords
@@ -117,23 +101,12 @@ def is_safe_for_facebook(title):
         if keyword in title_lower:
             return False, f"Blacklisted keyword: '{keyword}'"
 
-    # Layer 3: Pattern check
+    # Regex pattern check
     for pattern in SUSPICIOUS_PATTERNS:
         if _re.search(pattern, title, _re.IGNORECASE):
             return False, f"Suspicious pattern: '{pattern}'"
 
-    # Layer 1: Whitelist check
-    has_safe_platform = any(p in title_lower for p in ALLOWED_PLATFORMS)
-
-    # Allow Dual Audio / BluRay (mainstream Hollywood)
-    if not has_safe_platform:
-        if ('dual audio' in title_lower or 'bluray' in title_lower
-                or 'blu ray' in title_lower or 'blu-ray' in title_lower):
-            has_safe_platform = True
-
-    if not has_safe_platform:
-        return False, "No recognized safe platform found in title"
-
+    # Everything else is allowed
     return True, "OK"
 
 DB_CONFIG = {
