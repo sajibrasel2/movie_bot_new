@@ -31,10 +31,11 @@ FB_ACCESS_TOKEN = "EAAVC90kVmt0BSRu73j1F21qGPfxUPpwPAposPLnbU3L8fsC4esZBFOwaapXJ
 FB_API_BASE   = "https://graph.facebook.com/v19.0"
 
 DB_CONFIG = {
-    "host":     "localhost",
-    "user":     "techandc_bot",
-    "password": "12345Sajibs6@",
-    "database": "techandc_prompts",
+    "host":      "localhost",
+    "user":      "techandc_bot",
+    "password":  "12345Sajibs6@",
+    "database":  "techandc_prompts",
+    "charset":   "utf8mb4",
 }
 
 # How many news to post per run
@@ -166,14 +167,14 @@ def ensure_table(cursor):
         CREATE TABLE IF NOT EXISTS news_queue (
             id          INT AUTO_INCREMENT PRIMARY KEY,
             url_hash    VARCHAR(64) UNIQUE NOT NULL,
-            title       TEXT NOT NULL,
-            summary     TEXT,
-            source      VARCHAR(200),
+            title       TEXT CHARACTER SET utf8mb4 NOT NULL,
+            summary     TEXT CHARACTER SET utf8mb4,
+            source      VARCHAR(200) CHARACTER SET utf8mb4,
             news_url    TEXT,
             image_url   TEXT,
             published   VARCHAR(100),
             created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     """)
 
 
@@ -234,35 +235,52 @@ def make_hash(url):
 
 def resolve_google_news_url(url):
     """
-    Try to resolve Google News redirect.
-    If fails, extract the source domain from URL parameters.
+    Google News RSS article URLs are base64 encoded.
+    Decode to get the original article URL.
     """
     if "news.google.com" not in url:
-        return url, url
+        return url
 
-    # Try to extract source URL from Google News URL parameters
-    import urllib.parse
+    import base64
+    import re
+
     try:
-        # Google News URLs often contain the source in 'url' parameter
-        parsed = urllib.parse.urlparse(url)
-        params = urllib.parse.parse_qs(parsed.query)
-        if 'url' in params:
-            original = params['url'][0]
-            return original, original
+        # Extract the encoded part from URL
+        # Format: CBMi...CBMI (base64 encoded)
+        match = re.search(r'articles/([A-Za-z0-9_\-]+)', url)
+        if match:
+            encoded = match.group(1)
+            # Add padding
+            padding = 4 - len(encoded) % 4
+            if padding != 4:
+                encoded += '=' * padding
+            # Try base64 decode
+            try:
+                decoded = base64.b64decode(encoded).decode('utf-8', errors='ignore')
+                # Extract URL from decoded string
+                url_match = re.search(r'https?://[^\s"\'<>]+', decoded)
+                if url_match:
+                    extracted = url_match.group(0)
+                    if "news.google.com" not in extracted:
+                        return extracted
+            except Exception:
+                pass
     except Exception:
         pass
 
-    # Try HTTP redirect follow
+    # Fallback: try HTTP redirect
     try:
-        r = requests.get(url, headers=HEADERS, timeout=8, allow_redirects=True)
+        headers = HEADERS.copy()
+        headers['Accept'] = 'text/html,application/xhtml+xml'
+        r = requests.get(url, headers=headers, timeout=8,
+                        allow_redirects=True)
         final_url = r.url
         if "news.google.com" not in final_url:
-            return final_url, final_url
+            return final_url
     except Exception:
         pass
 
-    # Fallback: return Google URL as-is, extract readable source
-    return url, url
+    return url
 
 
 def fetch_og_image(url):
@@ -305,7 +323,7 @@ def scrape_google_news_rss(source):
                 continue
 
             # Resolve Google News redirect to original URL
-            original_url, display_url = resolve_google_news_url(url)
+            original_url = resolve_google_news_url(url)
 
             # Extract source name from title (Google News format: "Title - Source Name")
             source_name = source["name"]
