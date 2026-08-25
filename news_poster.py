@@ -308,7 +308,9 @@ def scrape_google_news_rss(source):
             logger.warning(f"  ⚠️ {source['name']}: HTTP {r.status_code}")
             return items
 
-        root = ET.fromstring(r.content)
+        # Force UTF-8 encoding
+        r.encoding = 'utf-8'
+        root = ET.fromstring(r.content.decode('utf-8', errors='replace'))
         channel = root.find("channel")
         if not channel:
             return items
@@ -368,30 +370,34 @@ def scrape_google_news_rss(source):
 # =====================================================
 
 def build_fb_message(news):
-    """Build Facebook post message"""
+    """Build Facebook post message — no Google News link"""
     title   = news[1]
     summary = news[2] or ""
     source  = news[3] or ""
-    url     = news[4]
     pub     = news[6] or ""
 
     msg  = f"📰 {title}\n\n"
 
-    if summary:
+    if summary and len(summary) > 10:
         msg += f"{summary}\n\n"
 
     if pub:
-        msg += f"🕐 {pub}\n"
+        # Clean pub date
+        try:
+            from email.utils import parsedate_to_datetime
+            dt = parsedate_to_datetime(pub)
+            msg += f"🕐 {dt.strftime('%d %b %Y, %I:%M %p')}\n"
+        except Exception:
+            msg += f"🕐 {pub[:30]}\n"
 
     if source:
         msg += f"📡 Source: {source}\n"
 
-    msg += f"\n🔗 Read Full Story:\n{url}\n\n"
-    msg += f"━━━━━━━━━━━━━━━━━━━━\n"
-    msg += f"📢 Stay updated with the latest Bangladesh & world news!\n"
-    msg += f"👍 Like & Follow our page for more updates.\n"
+    msg += f"\n━━━━━━━━━━━━━━━━━━━━\n"
+    msg += f"📢 Stay updated with Bangladesh & world news!\n"
+    msg += f"👍 Like & Follow our page: News Express BD\n"
     msg += f"━━━━━━━━━━━━━━━━━━━━\n\n"
-    msg += f"#Bangladesh #News #BreakingNews #WorldNews #BangladeshNews"
+    msg += f"#Bangladesh #News #BreakingNews #BangladeshNews #WorldNews"
 
     return msg
 
