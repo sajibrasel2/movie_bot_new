@@ -234,27 +234,35 @@ def make_hash(url):
 
 def resolve_google_news_url(url):
     """
-    Google News URL is a redirect to the original article.
-    Follow the redirect to get the real URL.
+    Try to resolve Google News redirect.
+    If fails, extract the source domain from URL parameters.
     """
     if "news.google.com" not in url:
-        return url
+        return url, url
+
+    # Try to extract source URL from Google News URL parameters
+    import urllib.parse
     try:
-        r = requests.get(url, headers=HEADERS, timeout=10, allow_redirects=True)
-        final_url = r.url
-        # If still google news, try parsing from HTML
-        if "news.google.com" in final_url:
-            soup = BeautifulSoup(r.text, "html.parser")
-            # Look for canonical or og:url
-            og = soup.find("meta", property="og:url")
-            if og and og.get("content") and "news.google.com" not in og["content"]:
-                return og["content"]
-            canonical = soup.find("link", rel="canonical")
-            if canonical and canonical.get("href") and "news.google.com" not in canonical["href"]:
-                return canonical["href"]
-        return final_url
+        # Google News URLs often contain the source in 'url' parameter
+        parsed = urllib.parse.urlparse(url)
+        params = urllib.parse.parse_qs(parsed.query)
+        if 'url' in params:
+            original = params['url'][0]
+            return original, original
     except Exception:
-        return url
+        pass
+
+    # Try HTTP redirect follow
+    try:
+        r = requests.get(url, headers=HEADERS, timeout=8, allow_redirects=True)
+        final_url = r.url
+        if "news.google.com" not in final_url:
+            return final_url, final_url
+    except Exception:
+        pass
+
+    # Fallback: return Google URL as-is, extract readable source
+    return url, url
 
 
 def fetch_og_image(url):
@@ -297,7 +305,14 @@ def scrape_google_news_rss(source):
                 continue
 
             # Resolve Google News redirect to original URL
-            original_url = resolve_google_news_url(url)
+            original_url, display_url = resolve_google_news_url(url)
+
+            # Extract source name from title (Google News format: "Title - Source Name")
+            source_name = source["name"]
+            if " - " in title:
+                parts = title.rsplit(" - ", 1)
+                title = parts[0].strip()
+                source_name = parts[1].strip()
 
             # Clean description (remove HTML tags)
             summary = BeautifulSoup(desc, "html.parser").get_text(separator=" ").strip()
@@ -317,7 +332,7 @@ def scrape_google_news_rss(source):
                 "url_hash":  make_hash(original_url),
                 "title":     title,
                 "summary":   summary,
-                "source":    source["name"],
+                "source":    source_name,
                 "url":       original_url,
                 "image_url": image_url,
                 "published": pub,
