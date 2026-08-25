@@ -38,8 +38,8 @@ DB_CONFIG = {
     "charset":   "utf8mb4",
 }
 
-# How many news to post per run
-POST_LIMIT = 3
+# How many news to post per run (0 = post ALL pending)
+POST_LIMIT = 0
 
 # Delay between posts (seconds) — avoid FB rate limit
 POST_DELAY = 10
@@ -209,16 +209,25 @@ def insert_news(cursor, item):
         return False
 
 
-def get_pending_news(cursor, limit=5):
+def get_pending_news(cursor, limit=0):
     """Get news items to post — Bangla news first, then English"""
-    cursor.execute("""
-        SELECT id, title, summary, source, news_url, image_url, published
-        FROM news_queue
-        ORDER BY 
-            CASE WHEN title REGEXP '[\\u0980-\\u09FF]' THEN 0 ELSE 1 END,
-            created_at ASC
-        LIMIT %s
-    """, (limit,))
+    if limit == 0:
+        cursor.execute("""
+            SELECT id, title, summary, source, news_url, image_url, published
+            FROM news_queue
+            ORDER BY 
+                CASE WHEN title REGEXP '[\\u0980-\\u09FF]' THEN 0 ELSE 1 END,
+                created_at ASC
+        """)
+    else:
+        cursor.execute("""
+            SELECT id, title, summary, source, news_url, image_url, published
+            FROM news_queue
+            ORDER BY 
+                CASE WHEN title REGEXP '[\\u0980-\\u09FF]' THEN 0 ELSE 1 END,
+                created_at ASC
+            LIMIT %s
+        """, (limit,))
     return cursor.fetchall()
 
 
