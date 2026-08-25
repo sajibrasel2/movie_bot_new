@@ -255,6 +255,9 @@ def resolve_google_news_url(url):
         return final_url
     except Exception:
         return url
+
+
+def fetch_og_image(url):
     """Try to get og:image from news article page"""
     try:
         r = requests.get(url, headers=HEADERS, timeout=8)
