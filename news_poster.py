@@ -232,7 +232,29 @@ def make_hash(url):
     return hashlib.md5(url.encode()).hexdigest()
 
 
-def fetch_og_image(url):
+def resolve_google_news_url(url):
+    """
+    Google News URL is a redirect to the original article.
+    Follow the redirect to get the real URL.
+    """
+    if "news.google.com" not in url:
+        return url
+    try:
+        r = requests.get(url, headers=HEADERS, timeout=10, allow_redirects=True)
+        final_url = r.url
+        # If still google news, try parsing from HTML
+        if "news.google.com" in final_url:
+            soup = BeautifulSoup(r.text, "html.parser")
+            # Look for canonical or og:url
+            og = soup.find("meta", property="og:url")
+            if og and og.get("content") and "news.google.com" not in og["content"]:
+                return og["content"]
+            canonical = soup.find("link", rel="canonical")
+            if canonical and canonical.get("href") and "news.google.com" not in canonical["href"]:
+                return canonical["href"]
+        return final_url
+    except Exception:
+        return url
     """Try to get og:image from news article page"""
     try:
         r = requests.get(url, headers=HEADERS, timeout=8)
@@ -271,6 +293,9 @@ def scrape_google_news_rss(source):
             if not title or not url:
                 continue
 
+            # Resolve Google News redirect to original URL
+            original_url = resolve_google_news_url(url)
+
             # Clean description (remove HTML tags)
             summary = BeautifulSoup(desc, "html.parser").get_text(separator=" ").strip()
             summary = summary[:300] if len(summary) > 300 else summary
@@ -286,11 +311,11 @@ def scrape_google_news_rss(source):
                     image_url = enc.get("url", "")
 
             items.append({
-                "url_hash":  make_hash(url),
+                "url_hash":  make_hash(original_url),
                 "title":     title,
                 "summary":   summary,
                 "source":    source["name"],
-                "url":       url,
+                "url":       original_url,
                 "image_url": image_url,
                 "published": pub,
             })
