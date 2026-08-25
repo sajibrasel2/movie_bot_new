@@ -43,15 +43,12 @@ POST_LIMIT = 3
 # Delay between posts (seconds) — avoid FB rate limit
 POST_DELAY = 10
 
-# Google News RSS sources — Bangladesh news from international media
+# Google News RSS sources — Bangladesh news from international + local media
 NEWS_SOURCES = [
+    # ── International (English) ──
     {
         "name": "Google News - Bangladesh",
         "url": "https://news.google.com/rss/search?q=bangladesh&hl=en-US&gl=US&ceid=US:en",
-    },
-    {
-        "name": "Google News - Bangladesh Breaking",
-        "url": "https://news.google.com/rss/search?q=bangladesh+breaking+news&hl=en-US&gl=US&ceid=US:en",
     },
     {
         "name": "BBC Bangladesh",
@@ -65,9 +62,55 @@ NEWS_SOURCES = [
         "name": "Reuters Bangladesh",
         "url": "https://news.google.com/rss/search?q=bangladesh+site:reuters.com&hl=en-US&gl=US&ceid=US:en",
     },
+
+    # ── Bangladeshi Newspapers (Bangla) ──
     {
-        "name": "Guardian Bangladesh",
-        "url": "https://news.google.com/rss/search?q=bangladesh+site:theguardian.com&hl=en-US&gl=US&ceid=US:en",
+        "name": "Prothom Alo",
+        "url": "https://www.prothomalo.com/feed",
+    },
+    {
+        "name": "Daily Jugantor",
+        "url": "https://www.jugantor.com/feed/rss.xml",
+    },
+    {
+        "name": "Kaler Kantho",
+        "url": "https://www.kalerkantho.com/feed",
+    },
+    {
+        "name": "Samakal",
+        "url": "https://samakal.com/feed",
+    },
+    {
+        "name": "Ittefaq",
+        "url": "https://www.ittefaq.com.bd/feed",
+    },
+    {
+        "name": "Daily Manabzamin",
+        "url": "https://mzamin.com/feed/",
+    },
+
+    # ── Bangladeshi Newspapers (English) ──
+    {
+        "name": "Daily Star BD",
+        "url": "https://www.thedailystar.net/frontpage/rss.xml",
+    },
+    {
+        "name": "Dhaka Tribune",
+        "url": "https://www.dhakatribune.com/feed",
+    },
+    {
+        "name": "New Age BD",
+        "url": "https://www.newagebd.net/feed/rss",
+    },
+
+    # ── Google News Bangla ──
+    {
+        "name": "Google News Bangla - BD",
+        "url": "https://news.google.com/rss?hl=bn&gl=BD&ceid=BD:bn",
+    },
+    {
+        "name": "Google News Bangla - Top",
+        "url": "https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRFZ4ZERBU0JtSnVMVWRCVWlnQVAB?hl=bn&gl=BD&ceid=BD:bn",
     },
 ]
 
