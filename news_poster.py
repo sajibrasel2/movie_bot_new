@@ -62,55 +62,63 @@ NEWS_SOURCES = [
         "name": "Reuters Bangladesh",
         "url": "https://news.google.com/rss/search?q=bangladesh+site:reuters.com&hl=en-US&gl=US&ceid=US:en",
     },
+    {
+        "name": "Guardian Bangladesh",
+        "url": "https://news.google.com/rss/search?q=bangladesh+site:theguardian.com&hl=en-US&gl=US&ceid=US:en",
+    },
+    {
+        "name": "CNN Bangladesh",
+        "url": "https://news.google.com/rss/search?q=bangladesh+site:cnn.com&hl=en-US&gl=US&ceid=US:en",
+    },
 
-    # ── Bangladeshi Newspapers (Bangla) ──
+    # ── Bangladeshi Newspapers (Bangla) — via Google News ──
     {
         "name": "Prothom Alo",
         "url": "https://www.prothomalo.com/feed",
     },
     {
-        "name": "Daily Jugantor",
-        "url": "https://www.jugantor.com/feed/rss.xml",
+        "name": "Jugantor (via Google)",
+        "url": "https://news.google.com/rss/search?q=site:jugantor.com&hl=bn&gl=BD&ceid=BD:bn",
     },
     {
-        "name": "Kaler Kantho",
-        "url": "https://www.kalerkantho.com/feed",
+        "name": "Kaler Kantho (via Google)",
+        "url": "https://news.google.com/rss/search?q=site:kalerkantho.com&hl=bn&gl=BD&ceid=BD:bn",
     },
     {
-        "name": "Samakal",
-        "url": "https://samakal.com/feed",
+        "name": "Samakal (via Google)",
+        "url": "https://news.google.com/rss/search?q=site:samakal.com&hl=bn&gl=BD&ceid=BD:bn",
     },
     {
-        "name": "Ittefaq",
-        "url": "https://www.ittefaq.com.bd/feed",
+        "name": "Daily Ittefaq (via Google)",
+        "url": "https://news.google.com/rss/search?q=site:ittefaq.com.bd&hl=bn&gl=BD&ceid=BD:bn",
     },
     {
-        "name": "Daily Manabzamin",
-        "url": "https://mzamin.com/feed/",
+        "name": "Manabzamin (via Google)",
+        "url": "https://news.google.com/rss/search?q=site:mzamin.com&hl=bn&gl=BD&ceid=BD:bn",
+    },
+    {
+        "name": "Bhorer Kagoj (via Google)",
+        "url": "https://news.google.com/rss/search?q=site:bhorerkagoj.com&hl=bn&gl=BD&ceid=BD:bn",
     },
 
-    # ── Bangladeshi Newspapers (English) ──
+    # ── Bangladeshi Newspapers (English) — via Google News ──
     {
-        "name": "Daily Star BD",
-        "url": "https://www.thedailystar.net/frontpage/rss.xml",
+        "name": "Daily Star BD (via Google)",
+        "url": "https://news.google.com/rss/search?q=site:thedailystar.net&hl=en&gl=BD&ceid=BD:en",
     },
     {
-        "name": "Dhaka Tribune",
-        "url": "https://www.dhakatribune.com/feed",
+        "name": "Dhaka Tribune (via Google)",
+        "url": "https://news.google.com/rss/search?q=site:dhakatribune.com&hl=en&gl=BD&ceid=BD:en",
     },
     {
-        "name": "New Age BD",
-        "url": "https://www.newagebd.net/feed/rss",
+        "name": "New Age BD (via Google)",
+        "url": "https://news.google.com/rss/search?q=site:newagebd.net&hl=en&gl=BD&ceid=BD:en",
     },
 
     # ── Google News Bangla ──
     {
-        "name": "Google News Bangla - BD",
+        "name": "Google News Bangla - BD Top",
         "url": "https://news.google.com/rss?hl=bn&gl=BD&ceid=BD:bn",
-    },
-    {
-        "name": "Google News Bangla - Top",
-        "url": "https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRFZ4ZERBU0JtSnVMVWRCVWlnQVAB?hl=bn&gl=BD&ceid=BD:bn",
     },
 ]
 
