@@ -210,11 +210,13 @@ def insert_news(cursor, item):
 
 
 def get_pending_news(cursor, limit=5):
-    """Get news items to post"""
+    """Get news items to post — Bangla news first, then English"""
     cursor.execute("""
         SELECT id, title, summary, source, news_url, image_url, published
         FROM news_queue
-        ORDER BY created_at ASC
+        ORDER BY 
+            CASE WHEN title REGEXP '[\\u0980-\\u09FF]' THEN 0 ELSE 1 END,
+            created_at ASC
         LIMIT %s
     """, (limit,))
     return cursor.fetchall()
