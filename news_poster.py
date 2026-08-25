@@ -38,8 +38,11 @@ DB_CONFIG = {
     "charset":   "utf8mb4",
 }
 
-# How many news to post per run (0 = post ALL pending)
-POST_LIMIT = 0
+# How many news to post per run
+POST_LIMIT = 5
+
+# News older than this (hours) will be deleted without posting
+MAX_NEWS_AGE_HOURS = 2
 
 # Delay between posts (seconds) — avoid FB rate limit
 POST_DELAY = 10
@@ -513,7 +516,16 @@ def main():
 
     logger.info(f"✅ Collected {total_new} new news items")
 
-    # ── Step 2: Post to Facebook ──
+    # ── Step 2: Delete stale news (older than MAX_NEWS_AGE_HOURS) ──
+    cursor.execute("""
+        DELETE FROM news_queue 
+        WHERE created_at < NOW() - INTERVAL %s HOUR
+    """, (MAX_NEWS_AGE_HOURS,))
+    deleted_stale = cursor.rowcount
+    if deleted_stale > 0:
+        logger.info(f"🗑️ Deleted {deleted_stale} stale news (older than {MAX_NEWS_AGE_HOURS}h)")
+
+    # ── Step 3: Post fresh news to Facebook ──
     pending = get_pending_news(cursor, limit=POST_LIMIT)
 
     if not pending:
