@@ -22,15 +22,7 @@ import mysql.connector
 import requests
 from bs4 import BeautifulSoup
 
-# Telegram (safe import — requires Python 3.8+ and telethon)
-TELEGRAM_ENABLED = False
-try:
-    import asyncio
-    from telethon import TelegramClient, Button
-    from telethon.sessions import StringSession
-    TELEGRAM_ENABLED = True
-except (ImportError, SyntaxError):
-    pass
+# Telegram uses Bot API via requests — no extra library needed
 
 # =====================================================
 # CONFIGURATION
@@ -58,25 +50,13 @@ MAX_NEWS_AGE_HOURS = 2
 POST_DELAY = 10
 
 # =====================================================
-# TELEGRAM CONFIGURATION
+# TELEGRAM CONFIGURATION (Bot API — works on Python 3.6+)
 # =====================================================
 
-TELEGRAM_API_ID      = 28186143
-TELEGRAM_API_HASH    = "6073c3149388bbc06e818add0be1622d"
-TELEGRAM_SESSION     = (
-    "1BVtsOJ0Bu1pxJKbdngNZprbcKPoGy5JsesQEEz6Wq_KgdkeQmkcH8Lto7vokIX"
-    "Jomxjy8k9uoXIBDZvr01VwNTbrZKJOjo9gMVHanqyeA-kEFWrS4QNi_S_miWc3F"
-    "L9Pk7F-Rr1N28jZEbu8yGx8qN774KT1J4DtA5QWkvt4_52UlU6InRiAhyBXUB_S"
-    "Ogn5Xw06xHeKDjDxrQI5A-SfwD6Yl_NA5GIeOZz4KtLc333wa_nKEXbZ2_97m0Q"
-    "3CpdsgmKS9KWaXmBqCu0s97y1nqXxHaqWh5oDBJ6048QmHedO7JMr-64W83yu4D"
-    "DLcOBIds19nki4tngGdFBCVyMb1KlavbW-rqU="
-)
-TELEGRAM_NEWS_CHANNEL = "@NewsExpressBD"  # আপনার news channel username দিন
-
-# Ad buttons for Telegram posts
-TG_AD_BUTTONS = [
-    [Button.url("📰 আরও নিউজ পড়ুন", "https://t.me/NewsExpressBD")] if TELEGRAM_ENABLED else None,
-]
+TELEGRAM_BOT_TOKEN   = "8351737906:AAHEHy27Nk_erz1EE2H6BdUrvhHTGGaQedk"
+TELEGRAM_NEWS_CHANNEL = "@bdwar71"
+TELEGRAM_API_BASE    = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
+TELEGRAM_ENABLED     = True  # Always enabled — uses requests only
 
 # Google News RSS sources — Bangladesh news from international + local media
 NEWS_SOURCES = [
@@ -521,6 +501,10 @@ def post_news_to_facebook(news, cursor):
 # TELEGRAM POST FUNCTION
 # =====================================================
 
+# =====================================================
+# TELEGRAM POST FUNCTION (Bot API — Python 3.6 compatible)
+# =====================================================
+
 def build_telegram_message(news):
     """Build Telegram post message"""
     title   = news[1]
@@ -528,7 +512,7 @@ def build_telegram_message(news):
     source  = news[3] or ""
     pub     = news[6] or ""
 
-    msg  = f"📰 **{title}**\n\n"
+    msg  = f"📰 *{title}*\n\n"
 
     if summary and len(summary) > 10:
         msg += f"{summary}\n\n"
@@ -542,94 +526,81 @@ def build_telegram_message(news):
             msg += f"🕐 {pub[:30]}\n"
 
     if source:
-        msg += f"📡 **Source:** {source}\n"
+        msg += f"📡 *Source:* {source}\n"
 
     msg += f"\n━━━━━━━━━━━━━━━━━━━━\n"
+    msg += f"📢 আরও নিউজ: @bdwar71\n"
     msg += f"#Bangladesh #News #BreakingNews #BangladeshNews"
 
     return msg[:4096]
 
 
-async def post_news_to_telegram_async(news_list, cursor):
-    """Post news list to Telegram channel"""
-    if not TELEGRAM_ENABLED:
-        logger.warning("Telethon not installed — skipping Telegram delivery")
-        return 0
+def send_telegram_photo(chat_id, photo_url, caption):
+    """Send photo with caption to Telegram"""
+    url = f"{TELEGRAM_API_BASE}/sendPhoto"
+    data = {
+        "chat_id": chat_id,
+        "photo": photo_url,
+        "caption": caption[:1024],
+        "parse_mode": "Markdown",
+    }
+    resp = requests.post(url, data=data, timeout=15)
+    return resp.json()
 
-    posted = 0
-    try:
-        client = TelegramClient(
-            StringSession(TELEGRAM_SESSION),
-            TELEGRAM_API_ID,
-            TELEGRAM_API_HASH
-        )
-        await client.start()
-        logger.info("  ✅ Telegram client connected")
 
-        buttons = [[Button.url("📰 আরও নিউজ", f"https://t.me/{TELEGRAM_NEWS_CHANNEL.lstrip('@')}")]]
-
-        for news in news_list:
-            news_id   = news[0]
-            title     = news[1]
-            image_url = news[5] or ""
-            news_url  = news[4] or ""
-
-            try:
-                message = build_telegram_message(news)
-
-                # Try to get image
-                if not image_url and news_url:
-                    image_url = fetch_og_image(news_url) or ""
-
-                if image_url and image_url.startswith("http"):
-                    logger.info(f"  📸 TG posting with photo: {title[:50]}")
-                    await client.send_file(
-                        entity=TELEGRAM_NEWS_CHANNEL,
-                        file=image_url,
-                        caption=message[:1024],
-                        parse_mode='md',
-                        buttons=buttons,
-                    )
-                else:
-                    logger.info(f"  📝 TG posting text: {title[:50]}")
-                    await client.send_message(
-                        entity=TELEGRAM_NEWS_CHANNEL,
-                        message=message,
-                        parse_mode='md',
-                        buttons=buttons,
-                        link_preview=False,
-                    )
-
-                logger.info(f"  ✅ Telegram posted: {title[:50]}")
-                delete_news(cursor, news_id)
-                posted += 1
-                await asyncio.sleep(3)
-
-            except Exception as e:
-                logger.error(f"  ❌ Telegram post failed: {e}")
-                delete_news(cursor, news_id)
-
-        await client.disconnect()
-
-    except Exception as e:
-        logger.error(f"Telegram client error: {e}")
-
-    return posted
+def send_telegram_message(chat_id, text):
+    """Send text message to Telegram"""
+    url = f"{TELEGRAM_API_BASE}/sendMessage"
+    data = {
+        "chat_id": chat_id,
+        "text": text[:4096],
+        "parse_mode": "Markdown",
+        "disable_web_page_preview": True,
+    }
+    resp = requests.post(url, data=data, timeout=15)
+    return resp.json()
 
 
 def post_news_to_telegram(news_list, cursor):
-    """Sync wrapper for async Telegram posting"""
+    """Post news to Telegram channel using Bot API"""
     if not TELEGRAM_ENABLED:
         return 0
-    try:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        result = loop.run_until_complete(post_news_to_telegram_async(news_list, cursor))
-        loop.close()
-        return result
-    except Exception as e:
-        logger.error(f"Telegram event loop error: {e}")
-        return 0
+
+    posted = 0
+    for news in news_list:
+        news_id   = news[0]
+        title     = news[1]
+        image_url = news[5] or ""
+        news_url  = news[4] or ""
+
+        try:
+            message = build_telegram_message(news)
+
+            # Try to get image if not available
+            if not image_url and news_url:
+                image_url = fetch_og_image(news_url) or ""
+
+            if image_url and image_url.startswith("http"):
+                result = send_telegram_photo(TELEGRAM_NEWS_CHANNEL, image_url, message)
+            else:
+                result = send_telegram_message(TELEGRAM_NEWS_CHANNEL, message)
+
+            if result.get("ok"):
+                logger.info(f"  ✅ Telegram posted: {title[:50]}")
+                delete_news(cursor, news_id)
+                posted += 1
+            else:
+                err = result.get("description", "Unknown error")
+                logger.error(f"  ❌ Telegram failed: {err}")
+                delete_news(cursor, news_id)
+
+        except Exception as e:
+            logger.error(f"  ❌ Telegram error: {e}")
+            delete_news(cursor, news_id)
+
+        time.sleep(2)
+
+    return posted
 
 
 # =====================================================
