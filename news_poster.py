@@ -22,14 +22,15 @@ import mysql.connector
 import requests
 from bs4 import BeautifulSoup
 
-# Telegram (safe import)
+# Telegram (safe import — requires Python 3.8+ and telethon)
+TELEGRAM_ENABLED = False
 try:
     import asyncio
     from telethon import TelegramClient, Button
     from telethon.sessions import StringSession
     TELEGRAM_ENABLED = True
-except ImportError:
-    TELEGRAM_ENABLED = False
+except (ImportError, SyntaxError):
+    pass
 
 # =====================================================
 # CONFIGURATION
