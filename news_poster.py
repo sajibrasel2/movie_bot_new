@@ -22,6 +22,15 @@ import mysql.connector
 import requests
 from bs4 import BeautifulSoup
 
+# Telegram (safe import)
+try:
+    import asyncio
+    from telethon import TelegramClient, Button
+    from telethon.sessions import StringSession
+    TELEGRAM_ENABLED = True
+except ImportError:
+    TELEGRAM_ENABLED = False
+
 # =====================================================
 # CONFIGURATION
 # =====================================================
@@ -46,6 +55,27 @@ MAX_NEWS_AGE_HOURS = 2
 
 # Delay between posts (seconds) — avoid FB rate limit
 POST_DELAY = 10
+
+# =====================================================
+# TELEGRAM CONFIGURATION
+# =====================================================
+
+TELEGRAM_API_ID      = 28186143
+TELEGRAM_API_HASH    = "6073c3149388bbc06e818add0be1622d"
+TELEGRAM_SESSION     = (
+    "1BVtsOJ0Bu1pxJKbdngNZprbcKPoGy5JsesQEEz6Wq_KgdkeQmkcH8Lto7vokIX"
+    "Jomxjy8k9uoXIBDZvr01VwNTbrZKJOjo9gMVHanqyeA-kEFWrS4QNi_S_miWc3F"
+    "L9Pk7F-Rr1N28jZEbu8yGx8qN774KT1J4DtA5QWkvt4_52UlU6InRiAhyBXUB_S"
+    "Ogn5Xw06xHeKDjDxrQI5A-SfwD6Yl_NA5GIeOZz4KtLc333wa_nKEXbZ2_97m0Q"
+    "3CpdsgmKS9KWaXmBqCu0s97y1nqXxHaqWh5oDBJ6048QmHedO7JMr-64W83yu4D"
+    "DLcOBIds19nki4tngGdFBCVyMb1KlavbW-rqU="
+)
+TELEGRAM_NEWS_CHANNEL = "@NewsExpressBD"  # আপনার news channel username দিন
+
+# Ad buttons for Telegram posts
+TG_AD_BUTTONS = [
+    [Button.url("📰 আরও নিউজ পড়ুন", "https://t.me/NewsExpressBD")] if TELEGRAM_ENABLED else None,
+]
 
 # Google News RSS sources — Bangladesh news from international + local media
 NEWS_SOURCES = [
@@ -487,6 +517,121 @@ def post_news_to_facebook(news, cursor):
 
 
 # =====================================================
+# TELEGRAM POST FUNCTION
+# =====================================================
+
+def build_telegram_message(news):
+    """Build Telegram post message"""
+    title   = news[1]
+    summary = news[2] or ""
+    source  = news[3] or ""
+    pub     = news[6] or ""
+
+    msg  = f"📰 **{title}**\n\n"
+
+    if summary and len(summary) > 10:
+        msg += f"{summary}\n\n"
+
+    if pub:
+        try:
+            from email.utils import parsedate_to_datetime
+            dt = parsedate_to_datetime(pub)
+            msg += f"🕐 {dt.strftime('%d %b %Y, %I:%M %p')}\n"
+        except Exception:
+            msg += f"🕐 {pub[:30]}\n"
+
+    if source:
+        msg += f"📡 **Source:** {source}\n"
+
+    msg += f"\n━━━━━━━━━━━━━━━━━━━━\n"
+    msg += f"#Bangladesh #News #BreakingNews #BangladeshNews"
+
+    return msg[:4096]
+
+
+async def post_news_to_telegram_async(news_list, cursor):
+    """Post news list to Telegram channel"""
+    if not TELEGRAM_ENABLED:
+        logger.warning("Telethon not installed — skipping Telegram delivery")
+        return 0
+
+    posted = 0
+    try:
+        client = TelegramClient(
+            StringSession(TELEGRAM_SESSION),
+            TELEGRAM_API_ID,
+            TELEGRAM_API_HASH
+        )
+        await client.start()
+        logger.info("  ✅ Telegram client connected")
+
+        buttons = [[Button.url("📰 আরও নিউজ", f"https://t.me/{TELEGRAM_NEWS_CHANNEL.lstrip('@')}")]]
+
+        for news in news_list:
+            news_id   = news[0]
+            title     = news[1]
+            image_url = news[5] or ""
+            news_url  = news[4] or ""
+
+            try:
+                message = build_telegram_message(news)
+
+                # Try to get image
+                if not image_url and news_url:
+                    image_url = fetch_og_image(news_url) or ""
+
+                if image_url and image_url.startswith("http"):
+                    logger.info(f"  📸 TG posting with photo: {title[:50]}")
+                    await client.send_file(
+                        entity=TELEGRAM_NEWS_CHANNEL,
+                        file=image_url,
+                        caption=message[:1024],
+                        parse_mode='md',
+                        buttons=buttons,
+                    )
+                else:
+                    logger.info(f"  📝 TG posting text: {title[:50]}")
+                    await client.send_message(
+                        entity=TELEGRAM_NEWS_CHANNEL,
+                        message=message,
+                        parse_mode='md',
+                        buttons=buttons,
+                        link_preview=False,
+                    )
+
+                logger.info(f"  ✅ Telegram posted: {title[:50]}")
+                delete_news(cursor, news_id)
+                posted += 1
+                await asyncio.sleep(3)
+
+            except Exception as e:
+                logger.error(f"  ❌ Telegram post failed: {e}")
+                delete_news(cursor, news_id)
+
+        await client.disconnect()
+
+    except Exception as e:
+        logger.error(f"Telegram client error: {e}")
+
+    return posted
+
+
+def post_news_to_telegram(news_list, cursor):
+    """Sync wrapper for async Telegram posting"""
+    if not TELEGRAM_ENABLED:
+        return 0
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        result = loop.run_until_complete(post_news_to_telegram_async(news_list, cursor))
+        loop.close()
+        return result
+    except Exception as e:
+        logger.error(f"Telegram event loop error: {e}")
+        return 0
+
+
+# =====================================================
 # MAIN
 # =====================================================
 
@@ -525,7 +670,7 @@ def main():
     if deleted_stale > 0:
         logger.info(f"🗑️ Deleted {deleted_stale} stale news (older than {MAX_NEWS_AGE_HOURS}h)")
 
-    # ── Step 3: Post fresh news to Facebook ──
+    # ── Step 3: Post fresh news to Facebook + Telegram ──
     pending = get_pending_news(cursor, limit=POST_LIMIT)
 
     if not pending:
@@ -533,20 +678,31 @@ def main():
         conn.close()
         return
 
-    logger.info(f"\n📤 Posting {len(pending)} news to Facebook...")
-    posted = 0
-    failed = 0
+    logger.info(f"\n📤 Posting {len(pending)} news to Facebook + Telegram...")
 
+    # Facebook posting
+    fb_posted = 0
+    fb_failed = 0
     for news in pending:
         success = post_news_to_facebook(news, cursor)
         if success:
-            posted += 1
+            fb_posted += 1
         else:
-            failed += 1
+            fb_failed += 1
         time.sleep(POST_DELAY)
 
+    # Telegram posting — fetch fresh pending (Facebook might have deleted some)
+    tg_pending = get_pending_news(cursor, limit=POST_LIMIT)
+    tg_posted = 0
+    if tg_pending:
+        logger.info(f"\n📱 Posting {len(tg_pending)} news to Telegram...")
+        tg_posted = post_news_to_telegram(tg_pending, cursor)
+
+    posted = fb_posted + tg_posted
+    failed = fb_failed
+
     logger.info("\n" + "=" * 60)
-    logger.info(f"✅ Posted: {posted}  ❌ Failed: {failed}")
+    logger.info(f"📘 Facebook: {fb_posted} posted | 📱 Telegram: {tg_posted} posted | ❌ Failed: {failed}")
     logger.info("=" * 60)
     conn.close()
 
