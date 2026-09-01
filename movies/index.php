@@ -81,6 +81,8 @@ function renderSection($title, $icon, $movies, $browseUrl = '') {
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
     <link rel="stylesheet" href="/assets/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Adsterra Popunder -->
+    <script data-cfasync="false">(function(d,s){var js=d.createElement(s);js.src='https://pl31123316.profitableratecpmnetwork.com/2e/a6/35/2ea63559996b1cbedb3c11f36fd88a6e.js';js.async=true;d.head.appendChild(js);})(document,'script');</script>
 </head>
 <body>
 
@@ -331,5 +333,7 @@ function renderSection($title, $icon, $movies, $browseUrl = '') {
     </script>
 
     <?php if ($showAds): echo displayAds('footer', 'homepage'); endif; ?>
+    <!-- Adsterra Social Bar -->
+    <script data-cfasync="false">(function(d,s){var js=d.createElement(s);js.src='https://pl31123318.profitableratecpmnetwork.com/51/77/86/517786261e02f312302cad8f15271421.js';d.body.appendChild(js);})(document,'script');</script>
 </body>
 </html>

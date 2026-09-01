@@ -76,6 +76,8 @@ $showAds = shouldShowAds();
     
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Adsterra Popunder -->
+    <script data-cfasync="false">(function(d,s){var js=d.createElement(s);js.src='https://pl31123316.profitableratecpmnetwork.com/2e/a6/35/2ea63559996b1cbedb3c11f36fd88a6e.js';js.async=true;d.head.appendChild(js);})(document,'script');</script>
 </head>
 <body>
 
@@ -421,5 +423,7 @@ $showAds = shouldShowAds();
     
     <!-- Click Protection System -->
     <script src="/assets/js/click-protection.js"></script>
+    <!-- Adsterra Social Bar -->
+    <script data-cfasync="false">(function(d,s){var js=d.createElement(s);js.src='https://pl31123318.profitableratecpmnetwork.com/51/77/86/517786261e02f312302cad8f15271421.js';d.body.appendChild(js);})(document,'script');</script>
 </body>
 </html>
