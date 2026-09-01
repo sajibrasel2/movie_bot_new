@@ -148,6 +148,14 @@ if (count($related) < 4) {
 <link rel="stylesheet" href="movie-style.css">
 <!-- Monetag Multitag -->
 <script src="https://quge5.com/88/tag.min.js" data-zoom="242064" async data-cfasync="false"></script>
+<?php /* Adsterra ads */ ?>
+<script data-cfasync="false">
+(function(d,s){
+var js=d.createElement(s);
+js.src='https://pl31123316.profitableratecpmnetwork.com/2e/a6/35/2ea63559996b1cbedb3c11f36fd88a6e.js';
+js.async=true;d.head.appendChild(js);
+})(document,'script');
+</script>
 </head>
 <body>
 <div class="wrap">
@@ -219,6 +227,11 @@ if (count($related) < 4) {
       ?>
       <div class="dl-section">
         <h2>📥 Download Links — All Qualities Available</h2>
+        <?php /* Adsterra Native Banner */ ?>
+        <div style="margin-bottom:16px">
+        <script data-cfasync="false" async src="https://pl31123317.profitableratecpmnetwork.com/a50090477b3c571a5da993ec9da1db99/invoke.js"></script>
+        <div id="container-a50090477b3c571a5da993ec9da1db99"></div>
+        </div>
         
         <?php
         // Sort qualities: 4K > 1080p > 720p > 480p
@@ -444,8 +457,16 @@ document.querySelectorAll('.nav-links a').forEach(link => {
   });
 });
 </script>
-<!-- Adsterra Popunder & Social Bar -->
+<!-- Adsterra ads -->
 <script src="https://pl21868673.effectivecpnetwork.com/0d/06/84/0d06849e0d895ea9b17bd67847b94baf.js"></script>
-<script src="https://pl21870303.effectivecpnetwork.com/72/c9/dd/72c9ddc173e93ad50cc86390ac4d0e3a.js"></script>?>
+<script src="https://pl21870303.effectivecpnetwork.com/72/c9/dd/72c9ddc173e93ad50cc86390ac4d0e3a.js"></script>
+<?php /* Adsterra Social Bar */ ?>
+<script data-cfasync="false">
+(function(d,s){
+var js=d.createElement(s);
+js.src='https://pl31123318.profitableratecpmnetwork.com/51/77/86/517786261e02f312302cad8f15271421.js';
+d.body.appendChild(js);
+})(document,'script');
+</script>
 </body>
 </html>

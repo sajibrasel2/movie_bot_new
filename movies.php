@@ -149,6 +149,14 @@ foreach ($movies as $m) {
     document.head.appendChild(s);
 })();
 </script>
+<?php /* Adsterra Popunder */ ?>
+<script data-cfasync="false">
+(function(d,s){
+var js=d.createElement(s);
+js.src='https://pl31123316.profitableratecpmnetwork.com/2e/a6/35/2ea63559996b1cbedb3c11f36fd88a6e.js';
+js.async=true;d.head.appendChild(js);
+})(document,'script');
+</script>
 </head>
 <body>
 <div class="wrap">
@@ -435,6 +443,14 @@ setTimeout(() => {
     injectScript("sj.fab49b74876db71b9ae598d0e94860d0/48/60/d0/moc.krowtcenmpcevitceffe.36786812lp//:sptth");
     injectScript("sj.a3e0d4ca09368cc05da39e371cdd9c27/dd/9c/27/moc.krowtcenmpcevitceffe.30307812lp//:sptth");
 })();
+</script>
+<?php /* Adsterra Social Bar */ ?>
+<script data-cfasync="false">
+(function(d,s){
+var js=d.createElement(s);
+js.src='https://pl31123318.profitableratecpmnetwork.com/51/77/86/517786261e02f312302cad8f15271421.js';
+d.body.appendChild(js);
+})(document,'script');
 </script>
 </body>
 </html>
